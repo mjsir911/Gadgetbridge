@@ -245,7 +245,7 @@ public class DiscoveryActivity extends AbstractGBActivity implements AdapterView
     private ProgressBar progressView;
     private BluetoothAdapter adapter;
     private final ArrayList<GBDeviceCandidate> deviceCandidates = new ArrayList<>();
-    private DeviceCandidateAdapter cadidateListAdapter;
+    private DeviceCandidateAdapter candidateListAdapter;
     private Button startButton;
     private Scanning isScanning = Scanning.SCANNING_OFF;
     private GBDeviceCandidate bondingDevice;
@@ -276,8 +276,8 @@ public class DiscoveryActivity extends AbstractGBActivity implements AdapterView
         progressView.setVisibility(View.GONE);
         ListView deviceCandidatesView = findViewById(R.id.discovery_deviceCandidatesView);
 
-        cadidateListAdapter = new DeviceCandidateAdapter(this, deviceCandidates);
-        deviceCandidatesView.setAdapter(cadidateListAdapter);
+        candidateListAdapter = new DeviceCandidateAdapter(this, deviceCandidates);
+        deviceCandidatesView.setAdapter(candidateListAdapter);
         deviceCandidatesView.setOnItemClickListener(this);
 
         IntentFilter bluetoothIntents = new IntentFilter();
@@ -366,7 +366,7 @@ public class DiscoveryActivity extends AbstractGBActivity implements AdapterView
             } else {
                 deviceCandidates.add(candidate);
             }
-            cadidateListAdapter.notifyDataSetChanged();
+            candidateListAdapter.notifyDataSetChanged();
         }
     }
 
