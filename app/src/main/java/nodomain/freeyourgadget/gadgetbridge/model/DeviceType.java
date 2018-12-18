@@ -65,6 +65,7 @@ public enum DeviceType {
     BANGLEJS(160, R.drawable.ic_device_zetime, R.drawable.ic_device_zetime_disabled, R.string.devicetype_banglejs),
     MIJIA_LYWSD02(200, R.drawable.ic_device_pebble, R.drawable.ic_device_pebble_disabled, R.string.devicetype_mijia_lywsd02),
     VIBRATISSIMO(300, R.drawable.ic_device_lovetoy, R.drawable.ic_device_lovetoy_disabled, R.string.devicetype_vibratissimo),
+    VIVOFIT3(400, R.drawable.ic_device_default, R.drawable.ic_device_default_disabled, R.string.devicetype_vivofit3),
     TEST(1000, R.drawable.ic_device_default, R.drawable.ic_device_default_disabled, R.string.devicetype_test);
 
     private final int key;

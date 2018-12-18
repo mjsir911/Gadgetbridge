@@ -46,6 +46,7 @@ import nodomain.freeyourgadget.gadgetbridge.service.devices.huami.miband4.MiBand
 import nodomain.freeyourgadget.gadgetbridge.service.devices.id115.ID115Support;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.jyou.BFH16DeviceSupport;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.jyou.TeclastH30.TeclastH30Support;
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.VivoFit3Support;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.liveview.LiveviewSupport;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.makibeshr3.MakibesHR3DeviceSupport;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.miband.MiBandSupport;
@@ -224,6 +225,8 @@ public class DeviceSupportFactory {
                         break;
                     case BANGLEJS:
                         deviceSupport = new ServiceDeviceSupport(new BangleJSDeviceSupport(), EnumSet.of(ServiceDeviceSupport.Flags.BUSY_CHECKING));
+                    case VIVOFIT3:
+                        deviceSupport = new ServiceDeviceSupport(new VivoFit3Support(), EnumSet.of(ServiceDeviceSupport.Flags.BUSY_CHECKING));
                         break;
                 }
                 if (deviceSupport != null) {
