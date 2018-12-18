@@ -26,8 +26,17 @@ private static final Logger LOG = LoggerFactory.getLogger(VivoFit3OutputStream.c
 
 	}
 
+	public void flush() {
+		synchronized (this) {
+			try {
+				this.wait();
+			} catch (InterruptedException e) {}
+		}
+	}
+
 	public void write(@NonNull final byte[] b) {
 		LOG.debug("start write");
+		final VivoFit3OutputStream that = this;
 		writer.writeWithResponseCallback(createFile(fpath, b.length, subtype, bigid),
 				new VivoFit3IoThread.MyRunnable() {
 					public void run(byte[] resp) {
@@ -53,6 +62,9 @@ private static final Logger LOG = LoggerFactory.getLogger(VivoFit3OutputStream.c
 												new VivoFit3IoThread.MyRunnable() {
 													public void run(byte[] resp) {
 													LOG.debug("		#################from file transfer response : " + Logging.formatBytes(resp));
+													synchronized (that) {
+														that.notify();
+													}
 													}
 												});
 									}

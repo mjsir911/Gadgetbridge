@@ -53,6 +53,7 @@ import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 
 import nodomain.freeyourgadget.gadgetbridge.service.btle.TransactionBuilder;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.actions.NotifyAction;
+import nodomain.freeyourgadget.gadgetbridge.service.btle.actions.PlainAction;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.BtLEQueue;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.GattCallback;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.AbstractGattCallback;
@@ -186,9 +187,11 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 			gbDevice.setState(GBDevice.State.INITIALIZING);
 			gbDevice.sendDeviceUpdateIntent(getContext());
 			mSupport.onPairStart(); // system event (pair start)
-			new VivoFit3OutputStream("", (byte) 0x09, 0x000000012c13750cL, this).write(new byte[] {
+			VivoFit3OutputStream settingsFile = new VivoFit3OutputStream("", (byte) 0x09, 0x000000012c13750cL, this);
+			settingsFile.write(new byte[] {
 				(byte) 0x0e,(byte) 0x10,(byte) 0x1d,(byte) 0x08,(byte) 0xcd,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x2e,(byte) 0x46,(byte) 0x49,(byte) 0x54,(byte) 0x59,(byte) 0xe3,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x06,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x01,(byte) 0x02,(byte) 0x84,(byte) 0x02,(byte) 0x02,(byte) 0x84,(byte) 0x04,(byte) 0x04,(byte) 0x86,(byte) 0x03,(byte) 0x04,(byte) 0x8c,(byte) 0x05,(byte) 0x02,(byte) 0x84,(byte) 0x00,(byte) 0x02,(byte) 0x00,(byte) 0x01,(byte) 0xff,(byte) 0xfe,(byte) 0x36,(byte) 0x75,(byte) 0x38,(byte) 0x60,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x01,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x03,(byte) 0x10,(byte) 0x02,(byte) 0x01,(byte) 0x02,(byte) 0x01,(byte) 0x01,(byte) 0x00,(byte) 0x04,(byte) 0x02,(byte) 0x84,(byte) 0x03,(byte) 0x01,(byte) 0x02,(byte) 0x18,(byte) 0x01,(byte) 0x02,(byte) 0x1b,(byte) 0x01,(byte) 0x00,(byte) 0x1d,(byte) 0x04,(byte) 0x86,(byte) 0x1c,(byte) 0x04,(byte) 0x86,(byte) 0x1f,(byte) 0x02,(byte) 0x84,(byte) 0x20,(byte) 0x02,(byte) 0x84,(byte) 0x0e,(byte) 0x01,(byte) 0x00,(byte) 0x08,(byte) 0x01,(byte) 0x02,(byte) 0x2b,(byte) 0x01,(byte) 0x00,(byte) 0x2d,(byte) 0x01,(byte) 0x0a,(byte) 0x2c,(byte) 0x01,(byte) 0x02,(byte) 0x33,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x12,(byte) 0x01,(byte) 0x02,(byte) 0x12,(byte) 0xaf,(byte) 0x64,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x27,(byte) 0x50,(byte) 0x00,(byte) 0x00,(byte) 0x54,(byte) 0x60,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x09,(byte) 0x0b,(byte) 0x00,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x02,(byte) 0x0c,(byte) 0x2f,(byte) 0x01,(byte) 0x00,(byte) 0x04,(byte) 0x01,(byte) 0x00,(byte) 0x32,(byte) 0x01,(byte) 0x0a,(byte) 0x28,(byte) 0x04,(byte) 0x84,(byte) 0x39,(byte) 0x04,(byte) 0x84,(byte) 0x46,(byte) 0x01,(byte) 0x02,(byte) 0x23,(byte) 0x01,(byte) 0x00,(byte) 0x3b,(byte) 0x02,(byte) 0x84,(byte) 0x3a,(byte) 0x02,(byte) 0x84,(byte) 0x2e,(byte) 0x01,(byte) 0x00,(byte) 0x5a,(byte) 0x04,(byte) 0x86,(byte) 0x59,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0xbf,(byte) 0x00,(byte) 0x15,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x02,(byte) 0x00,(byte) 0x00,(byte) 0xf0,(byte) 0x07,(byte) 0xd0,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x03,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x9f,(byte) 0x03,(byte) 0x08,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x01,(byte) 0x01,(byte) 0x0d,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x37,(byte) 0x25,
 			});
+			settingsFile.flush();
 			// file system download xml file (1552)
 			// filter and download another file (1870-1873)
 			// create file & upload to file (1881-1885)
@@ -198,6 +201,13 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 			gbDevice.sendDeviceUpdateIntent(getContext());
 
 			LOG.debug("MARCO _______ thread connect() end___________");
+			new TransactionBuilder("Initialize device")
+			.add(new PlainAction() {
+				public boolean run(BluetoothGatt gatt) {
+					quit();
+					return true;
+				}
+			}).queue(mQueue);
 			return true;
     }
 
@@ -342,8 +352,14 @@ class VivoFit3IoThread extends GBDeviceIoThread {
     public void quit() {
 			LOG.debug("MARCO ______________thread quit_____________");
 			mSupport.onSyncComplete(); // system event (sync complete)
-			try{
-			Thread.sleep(5000);
-			} catch (InterruptedException e) {}
+			new TransactionBuilder("Disconnect")
+			.add(new PlainAction() {
+				public boolean run(BluetoothGatt gatt) {
+					mQueue.disconnect();
+					gbDevice.setState(GBDevice.State.WAITING_FOR_RECONNECT);
+					gbDevice.sendDeviceUpdateIntent(getContext());
+					return true;
+				}
+			}).queue(mQueue);
     }
 }
