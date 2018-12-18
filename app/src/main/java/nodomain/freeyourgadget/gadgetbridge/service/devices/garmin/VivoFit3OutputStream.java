@@ -12,16 +12,17 @@ import nodomain.freeyourgadget.gadgetbridge.Logging;
 
 class VivoFit3OutputStream extends OutputStream {
 private static final Logger LOG = LoggerFactory.getLogger(VivoFit3OutputStream.class);
-	private int offset = 0;
+	private int mOffset = 0;
 	private String fpath;
 	private byte subtype;
-	private long bigid;
 	private VivoFit3IoThread writer;
-	public VivoFit3OutputStream(String fpath, byte subtype, long bigid, VivoFit3IoThread writer) {
+
+	private short mfIndex;
+
+	public VivoFit3OutputStream(String fpath, byte subtype, VivoFit3IoThread writer) {
 		super();
 		this.fpath = fpath;
 		this.subtype = subtype;
-		this.bigid = bigid;
 		this.writer = writer;
 
 	}
@@ -34,44 +35,53 @@ private static final Logger LOG = LoggerFactory.getLogger(VivoFit3OutputStream.c
 		}
 	}
 
+	private void finishWrite() {
+		synchronized(this) {
+			this.notify();
+		}
+	}
+
 	public void write(@NonNull final byte[] b) {
 		LOG.debug("start write");
 		final VivoFit3OutputStream that = this;
-		writer.writeWithResponseCallback(createFile(fpath, b.length, subtype, bigid),
-				new VivoFit3IoThread.MyRunnable() {
-					public void run(byte[] resp) {
-						LOG.debug("#################from write create file response : " + Logging.formatBytes(resp));
-						// order of these matter
-						ByteBuffer bb = ByteBuffer.wrap(resp).order(ByteOrder.LITTLE_ENDIAN);
-						byte respStatus = bb.get();
-						if (!(respStatus == 0x00 || respStatus == 0x01)) {
-							LOG.error("response status bad: " + respStatus);
-							return;
-						}
-						short fIndex = bb.getShort();
-						byte fDataType = bb.get();
-						byte fDataSubType = bb.get();
-						short fNumber = bb.getShort();
-
-						
-						writer.writeWithResponseCallback(encodeUploadRequest(fIndex, b.length, offset),
-								new VivoFit3IoThread.MyRunnable() {
-									public void run(byte[] resp) {
-										LOG.debug("	#################from upload response : " + Logging.formatBytes(resp));
-										writer.writeWithResponseCallback(encodeFileTransfer(b, offset),
-												new VivoFit3IoThread.MyRunnable() {
-													public void run(byte[] resp) {
-													LOG.debug("		#################from file transfer response : " + Logging.formatBytes(resp));
-													synchronized (that) {
-														that.notify();
-													}
-													}
-												});
-									}
-								});
+		writer.writeWithResponseCallback(createFile(fpath, b.length, subtype, System.currentTimeMillis()), 
+			new VivoFit3IoThread.MyRunnable() {
+				public void run(byte[] resp) {
+					LOG.debug("#################from write create file response : " + Logging.formatBytes(resp));
+					// order of these matter
+					ByteBuffer bb = ByteBuffer.wrap(resp).order(ByteOrder.LITTLE_ENDIAN);
+					byte respStatus = bb.get();
+					if (!(respStatus == 0x00)) {
+						LOG.error("response status bad: " + respStatus);
+						return;
 					}
-				});
+					short fIndex = bb.getShort();
+					//byte fDataType = bb.get();
+					//byte fDataSubType = bb.get();
+					//short fNumber = bb.getShort();
+					mfIndex = fIndex;
+					writer.writeWithResponseCallback(encodeUploadRequest(mfIndex, b.length, mOffset),
+						new VivoFit3IoThread.MyRunnable() {
+							public void run(byte[] resp) {
+								LOG.debug("#################from upload response : " + Logging.formatBytes(resp));
+								writer.writeWithResponseCallback(encodeFileTransfer(b, mOffset),
+									new VivoFit3IoThread.MyRunnable() {
+										public void run(byte[] resp) {
+											LOG.debug("#################from file transfer response : " + Logging.formatBytes(resp));
+											mOffset += b.length;
+											finishWrite();
+										}
+									}
+								);
+							}
+						}
+					);
+				}
+			}
+		);
 	}
+
+
 	public void write(int b) {
 		write(new byte[] {(byte) b});
 	}
