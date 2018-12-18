@@ -63,6 +63,7 @@ import nodomain.freeyourgadget.gadgetbridge.devices.vibratissimo.VibratissimoCoo
 import nodomain.freeyourgadget.gadgetbridge.devices.watch9.Watch9DeviceCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.xwatch.XWatchCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.devices.zetime.ZeTimeCoordinator;
+import nodomain.freeyourgadget.gadgetbridge.devices.garmin.VivoFit3Coordinator;
 import nodomain.freeyourgadget.gadgetbridge.entities.Device;
 import nodomain.freeyourgadget.gadgetbridge.entities.DeviceAttributes;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
@@ -216,6 +217,7 @@ public class DeviceHelper {
         result.add(new Watch9DeviceCoordinator());
         result.add(new Roidmi1Coordinator());
         result.add(new Roidmi3Coordinator());
+        result.add(new VivoFit3Coordinator());
 
         return result;
     }

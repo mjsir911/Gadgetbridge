@@ -71,6 +71,7 @@ public class GBDaoGenerator {
         addXWatchActivitySample(schema, user, device);
         addZeTimeActivitySample(schema, user, device);
         addID115ActivitySample(schema, user, device);
+        addVivoFit3ActivitySample(schema, user, device);
 
         addCalendarSyncState(schema, device);
         addAlarms(schema, user, device);
@@ -305,6 +306,17 @@ public class GBDaoGenerator {
 
     private static Entity addID115ActivitySample(Schema schema, Entity user, Entity device) {
         Entity activitySample = addEntity(schema, "ID115ActivitySample");
+        activitySample.implementsSerializable();
+        addCommonActivitySampleProperties("AbstractActivitySample", activitySample, user, device);
+        activitySample.addIntProperty(SAMPLE_STEPS).notNull().codeBeforeGetterAndSetter(OVERRIDE);
+        activitySample.addIntProperty(SAMPLE_RAW_KIND).notNull().codeBeforeGetterAndSetter(OVERRIDE);
+        activitySample.addIntProperty("caloriesBurnt");
+        activitySample.addIntProperty("distanceMeters");
+        activitySample.addIntProperty("activeTimeMinutes");
+        return activitySample;
+    }
+    private static Entity addVivoFit3ActivitySample(Schema schema, Entity user, Entity device) {
+        Entity activitySample = addEntity(schema, "VivoFit3ActivitySample");
         activitySample.implementsSerializable();
         addCommonActivitySampleProperties("AbstractActivitySample", activitySample, user, device);
         activitySample.addIntProperty(SAMPLE_STEPS).notNull().codeBeforeGetterAndSetter(OVERRIDE);

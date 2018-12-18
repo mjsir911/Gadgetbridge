@@ -628,6 +628,7 @@
     <string name="devicetype_watch9">Watch 9</string>
     <string name="devicetype_roidmi">Roidmi</string>
     <string name="devicetype_roidmi3">Roidmi 3</string>
+    <string name="devicetype_vivofit3">Vívofit 3</string>
 
     <string name="choose_auto_export_location">Choose export location</string>
     <string name="notification_channel_name">Gadgetbridge notifications</string>
