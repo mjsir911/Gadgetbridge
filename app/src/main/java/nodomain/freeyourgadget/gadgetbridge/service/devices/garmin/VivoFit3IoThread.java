@@ -94,7 +94,6 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 				@Override
 				public void onServicesDiscovered(BluetoothGatt gatt) {
 					synchronized (mAvailableCharacteristics) {
-						LOG.debug("MARCO _____hello from gatt callback______");
 						for (BluetoothGattService service : gatt.getServices()) {
 							for (BluetoothGattCharacteristic charac : service.getCharacteristics()) {
 								mAvailableCharacteristics.put(charac.getUuid(), charac);
@@ -131,14 +130,10 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 							.wrap(VivoFit3Protocol.decodeCOBS(responseArray))
 							.order(ByteOrder.LITTLE_ENDIAN);
 						short id = tmpBb.getShort(2);
-						LOG.debug("MARCO ___ID____:" + id);
 						if (id != 0x1388) {
 							write(mProtocol.ack(tmpBb.array()));
 						} else {
-							LOG.debug("MARCO ___________________________");
-							LOG.debug("id is " + id);
 							short responseId = tmpBb.getShort(4);
-							LOG.debug("subid is " + responseId);
 							Queue<MyRunnable> responseCallbacks = callbacksMap.get(responseId);
 							if (responseCallbacks == null) {
 								LOG.debug("responsecallbacks is null for id " + responseId);
@@ -154,7 +149,6 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 							byte[] newResponseArray = new byte[currentArray.length - 8];
 							System.arraycopy(currentArray, 7, newResponseArray, 0, currentArray.length - 9);
 							responseCallback.run(newResponseArray);
-							LOG.debug("______________________");
 						}
 					}
 					return true;
@@ -162,11 +156,21 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 			};
     }
 
+		protected boolean initialize() {
+			VivoFit3OutputStream settingsFile = new VivoFit3OutputStream("", (byte) 0x09, this);
+			settingsFile.write(new byte[] {
+				(byte) 0x0e,(byte) 0x10,(byte) 0x1d,(byte) 0x08,(byte) 0xcd,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x2e,(byte) 0x46,(byte) 0x49,(byte) 0x54,(byte) 0x59,(byte) 0xe3,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x06,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x01,(byte) 0x02,(byte) 0x84,(byte) 0x02,(byte) 0x02,(byte) 0x84,(byte) 0x04,(byte) 0x04,(byte) 0x86,(byte) 0x03,(byte) 0x04,(byte) 0x8c,(byte) 0x05,(byte) 0x02,(byte) 0x84,(byte) 0x00,(byte) 0x02,(byte) 0x00,(byte) 0x01,(byte) 0xff,(byte) 0xfe,(byte) 0x36,(byte) 0x75,(byte) 0x38,(byte) 0x60,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x01,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x03,(byte) 0x10,(byte) 0x02,(byte) 0x01,(byte) 0x02,(byte) 0x01,(byte) 0x01,(byte) 0x00,(byte) 0x04,(byte) 0x02,(byte) 0x84,(byte) 0x03,(byte) 0x01,(byte) 0x02,(byte) 0x18,(byte) 0x01,(byte) 0x02,(byte) 0x1b,(byte) 0x01,(byte) 0x00,(byte) 0x1d,(byte) 0x04,(byte) 0x86,(byte) 0x1c,(byte) 0x04,(byte) 0x86,(byte) 0x1f,(byte) 0x02,(byte) 0x84,(byte) 0x20,(byte) 0x02,(byte) 0x84,(byte) 0x0e,(byte) 0x01,(byte) 0x00,(byte) 0x08,(byte) 0x01,(byte) 0x02,(byte) 0x2b,(byte) 0x01,(byte) 0x00,(byte) 0x2d,(byte) 0x01,(byte) 0x0a,(byte) 0x2c,(byte) 0x01,(byte) 0x02,(byte) 0x33,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x12,(byte) 0x01,(byte) 0x02,(byte) 0x12,(byte) 0xaf,(byte) 0x64,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x27,(byte) 0x50,(byte) 0x00,(byte) 0x00,(byte) 0x54,(byte) 0x60,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x09,(byte) 0x0b,(byte) 0x00,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x02,(byte) 0x0c,(byte) 0x2f,(byte) 0x01,(byte) 0x00,(byte) 0x04,(byte) 0x01,(byte) 0x00,(byte) 0x32,(byte) 0x01,(byte) 0x0a,(byte) 0x28,(byte) 0x04,(byte) 0x84,(byte) 0x39,(byte) 0x04,(byte) 0x84,(byte) 0x46,(byte) 0x01,(byte) 0x02,(byte) 0x23,(byte) 0x01,(byte) 0x00,(byte) 0x3b,(byte) 0x02,(byte) 0x84,(byte) 0x3a,(byte) 0x02,(byte) 0x84,(byte) 0x2e,(byte) 0x01,(byte) 0x00,(byte) 0x5a,(byte) 0x04,(byte) 0x86,(byte) 0x59,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0xbf,(byte) 0x00,(byte) 0x15,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x02,(byte) 0x00,(byte) 0x00,(byte) 0xf0,(byte) 0x07,(byte) 0xd0,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x03,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x9f,(byte) 0x03,(byte) 0x08,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x01,(byte) 0x01,(byte) 0x0d,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x37,(byte) 0x25,
+			});
+			settingsFile.flush();
+			// file system download xml file (1552)
+			// filter and download another file (1870-1873)
+			// create file & upload to file (1881-1885)
+			return true;
+		}
+
     @Override
     protected boolean connect() {
-			gbDevice.setState(GBDevice.State.CONNECTING);
 			gbDevice.sendDeviceUpdateIntent(getContext());
-			LOG.debug("MARCO _______ thread connect() start______");
 			mQueue = new BtLEQueue(mAdapter, getDevice(), mCallback, getContext());
 			mQueue.setAutoReconnect(true);
 			mQueue.connect();
@@ -175,47 +179,44 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 					mAvailableCharacteristics.wait();
 				} catch (InterruptedException e) {}
 			}
+			getDevice().setState(GBDevice.State.INITIALIZING);
+			getDevice().sendDeviceUpdateIntent(getContext());
 			new TransactionBuilder("Initialize device")
 			.add(new NotifyAction(mAvailableCharacteristics.get(UUID.fromString("00002a05-0000-1000-8000-00805f9b34fb")), true))
 			.add(new NotifyAction(mAvailableCharacteristics.get(UUID.fromString("4acbcd28-7425-868e-f447-915c8f00d0cb")), true))
 			.queue(mQueue);
-			gbDevice.setState(GBDevice.State.CONNECTED);
-			gbDevice.sendDeviceUpdateIntent(getContext());
 			// send fit definition
 			// send fit data
-			mSupport.onSetTime(); // set device settings (time ) (1866)
-			gbDevice.setState(GBDevice.State.INITIALIZING);
-			gbDevice.sendDeviceUpdateIntent(getContext());
-			mSupport.onPairStart(); // system event (pair start)
-			VivoFit3OutputStream settingsFile = new VivoFit3OutputStream("", (byte) 0x09, 0x000000012c13750cL, this);
-			settingsFile.write(new byte[] {
-				(byte) 0x0e,(byte) 0x10,(byte) 0x1d,(byte) 0x08,(byte) 0xcd,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x2e,(byte) 0x46,(byte) 0x49,(byte) 0x54,(byte) 0x59,(byte) 0xe3,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x06,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x01,(byte) 0x02,(byte) 0x84,(byte) 0x02,(byte) 0x02,(byte) 0x84,(byte) 0x04,(byte) 0x04,(byte) 0x86,(byte) 0x03,(byte) 0x04,(byte) 0x8c,(byte) 0x05,(byte) 0x02,(byte) 0x84,(byte) 0x00,(byte) 0x02,(byte) 0x00,(byte) 0x01,(byte) 0xff,(byte) 0xfe,(byte) 0x36,(byte) 0x75,(byte) 0x38,(byte) 0x60,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x01,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x03,(byte) 0x10,(byte) 0x02,(byte) 0x01,(byte) 0x02,(byte) 0x01,(byte) 0x01,(byte) 0x00,(byte) 0x04,(byte) 0x02,(byte) 0x84,(byte) 0x03,(byte) 0x01,(byte) 0x02,(byte) 0x18,(byte) 0x01,(byte) 0x02,(byte) 0x1b,(byte) 0x01,(byte) 0x00,(byte) 0x1d,(byte) 0x04,(byte) 0x86,(byte) 0x1c,(byte) 0x04,(byte) 0x86,(byte) 0x1f,(byte) 0x02,(byte) 0x84,(byte) 0x20,(byte) 0x02,(byte) 0x84,(byte) 0x0e,(byte) 0x01,(byte) 0x00,(byte) 0x08,(byte) 0x01,(byte) 0x02,(byte) 0x2b,(byte) 0x01,(byte) 0x00,(byte) 0x2d,(byte) 0x01,(byte) 0x0a,(byte) 0x2c,(byte) 0x01,(byte) 0x02,(byte) 0x33,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x12,(byte) 0x01,(byte) 0x02,(byte) 0x12,(byte) 0xaf,(byte) 0x64,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x27,(byte) 0x50,(byte) 0x00,(byte) 0x00,(byte) 0x54,(byte) 0x60,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x09,(byte) 0x0b,(byte) 0x00,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x02,(byte) 0x0c,(byte) 0x2f,(byte) 0x01,(byte) 0x00,(byte) 0x04,(byte) 0x01,(byte) 0x00,(byte) 0x32,(byte) 0x01,(byte) 0x0a,(byte) 0x28,(byte) 0x04,(byte) 0x84,(byte) 0x39,(byte) 0x04,(byte) 0x84,(byte) 0x46,(byte) 0x01,(byte) 0x02,(byte) 0x23,(byte) 0x01,(byte) 0x00,(byte) 0x3b,(byte) 0x02,(byte) 0x84,(byte) 0x3a,(byte) 0x02,(byte) 0x84,(byte) 0x2e,(byte) 0x01,(byte) 0x00,(byte) 0x5a,(byte) 0x04,(byte) 0x86,(byte) 0x59,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0xbf,(byte) 0x00,(byte) 0x15,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x02,(byte) 0x00,(byte) 0x00,(byte) 0xf0,(byte) 0x07,(byte) 0xd0,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x03,(byte) 0x40,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x9f,(byte) 0x03,(byte) 0x08,(byte) 0x01,(byte) 0x00,(byte) 0x00,(byte) 0x01,(byte) 0x00,(byte) 0x01,(byte) 0x01,(byte) 0x0d,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x00,(byte) 0x37,(byte) 0x25,
-			});
-			settingsFile.flush();
-			// file system download xml file (1552)
-			// filter and download another file (1870-1873)
-			// create file & upload to file (1881-1885)
-			mSupport.onPairComplete(); // system event (pair complete)
+			if (mSupport.firstTime) {
+
+				mSupport.onPairStart(); // system event (pair start)
+				if (initialize()) {
+					mSupport.onPairComplete(); // system event (pair complete)
+				} else {
+					// TODO: onpairfailure
+				}
+
+				gbDevice.sendDeviceUpdateIntent(getContext());
+			}
 
 			gbDevice.setState(GBDevice.State.INITIALIZED);
 			gbDevice.sendDeviceUpdateIntent(getContext());
+			return true;
+    }
 
-			LOG.debug("MARCO _______ thread connect() end___________");
-			new TransactionBuilder("Initialize device")
+    @Override
+		public void run() {
+			connect();
+
+			mSupport.onSetTime(); // set device settings (time ) (1866)
+
+			new TransactionBuilder("End connection")
 			.add(new PlainAction() {
 				public boolean run(BluetoothGatt gatt) {
 					quit();
 					return true;
 				}
 			}).queue(mQueue);
-			return true;
-    }
-
-    @Override
-		public void run() {
-			LOG.debug("MARCO _______thread run() start______");
-			connect();
-			LOG.debug("MARCO _______thread run() end______");
     }
 
 

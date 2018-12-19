@@ -34,6 +34,7 @@ import nodomain.freeyourgadget.gadgetbridge.service.serial.AbstractSerialDeviceS
 
 public class VivoFit3Support extends AbstractSerialDeviceSupport {
 	private static final Logger LOG = LoggerFactory.getLogger(VivoFit3Support.class);
+	protected boolean firstTime = false;
 
 	@Override
 	public boolean connect() {
@@ -45,8 +46,8 @@ public class VivoFit3Support extends AbstractSerialDeviceSupport {
 	@Override
 	public boolean connectFirstTime() {
 		LOG.debug("___________MARCO connectfirsttime________________");
-		connect();
-		return true;
+		firstTime = true;
+		return connect();
 	}
 
 	@Override
