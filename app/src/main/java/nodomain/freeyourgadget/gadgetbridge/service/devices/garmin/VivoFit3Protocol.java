@@ -47,10 +47,31 @@ import nodomain.freeyourgadget.gadgetbridge.service.serial.GBDeviceProtocol;
 public class VivoFit3Protocol extends GBDeviceProtocol {
     private static final Logger LOG = LoggerFactory.getLogger(VivoFit3Protocol.class);
 
-		private static final short DeviceInformationMessageID = 0x13a0;
+		private static final short AcknowledgmentMessageID =        0x1388;
+		private static final short DeviceInformationMessageID =     0x13a0;
 		private static final short QueuedDownloadRequestMessageID = 0x13a3;
-		private static final short FitDefinitionMessageID = 0x1393;
-		private static final short FitDataMessageID = 0x1394;
+		private static final short SystemEventMessageID =           0x13a6;
+		private static enum  SystemEventType {
+			SYNC_COMPLETE(0x00),
+			SYNC_FAIL(0x01),
+			FACTORY_RESET(0x02),
+			PAIR_START(0x03),
+			PAIR_COMPLETE(0x04),
+			PAIR_FAIL(0x05),
+			SYNC_READY(0x08),
+			DEVICE_DISCONNECT(0x0b),
+			TIME_UPDATED(0x10);
+
+			private final byte value;
+			SystemEventType(int v) {
+				value = (byte) v;
+			}
+			public byte getValue() {
+				return value;
+			}
+		}
+		private static final short FitDefinitionMessageID =         0x1393;
+		private static final short FitDataMessageID =               0x1394;
 
 		private final Queue<byte[]> actionQueue = new LinkedBlockingQueue<>();
 
@@ -108,7 +129,7 @@ public class VivoFit3Protocol extends GBDeviceProtocol {
 			return ByteBuffer
 				.allocate(ret.length + 4)
 				.order(ByteOrder.LITTLE_ENDIAN)
-				.putShort((short) 0x1388)
+				.putShort((short) AcknowledgmentMessageID)
 				.put(ret, 0, 2) // put first two bytes (aka the ID)
 				.put((byte) 0x00) // idk
 				.put(ret, 2, ret.length - 2)
@@ -222,29 +243,29 @@ public class VivoFit3Protocol extends GBDeviceProtocol {
 				.array();
 		}
 
-		private byte[] encodeSystemEvent(byte identifier, byte[] data) {
+		private byte[] encodeSystemEvent(SystemEventType identifier, byte[] data) {
 			if (data == null || data.length == 0) {
 				data = new byte[] {0x00}; // default
 			}
 			return ByteBuffer.allocate(data.length + 4)
 				.order(ByteOrder.LITTLE_ENDIAN)
-				.putShort((short) 0x13a6)
-				.put(identifier)
+				.putShort(SystemEventMessageID)
+				.put(identifier.getValue())
 				.put((byte) data.length)
 				.put(data)
 				.array();
 		}
 
 		public byte[] encodeSyncComplete() {
-			return encodeSystemEvent((byte) 0x00, null);
+			return encodeSystemEvent(SystemEventType.SYNC_COMPLETE, null);
 		};
 
 		public byte[] encodePairStart() {
-			return encodeSystemEvent((byte) 0x03, null);
+			return encodeSystemEvent(SystemEventType.PAIR_START, null);
 		};
 
 		public byte[] encodePairComplete() {
-			return encodeSystemEvent((byte) 0x04, null);
+			return encodeSystemEvent(SystemEventType.PAIR_COMPLETE, null);
 		};
 
 
