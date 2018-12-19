@@ -209,13 +209,7 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 
 			mSupport.onSetTime(); // set device settings (time ) (1866)
 
-			new TransactionBuilder("End connection")
-			.add(new PlainAction() {
-				public boolean run(BluetoothGatt gatt) {
-					quit();
-					return true;
-				}
-			}).queue(mQueue);
+			//quit();
     }
 
 
