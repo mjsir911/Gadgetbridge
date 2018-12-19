@@ -1,5 +1,4 @@
-/*  Copyright (C) 2015-2018 Andreas Shimokawa, Carsten Pfeiffer, Daniele
-		Gobbetti, Kasha, Steffen Liebergeld
+/*  Copyright (C) 2018 Marco Sirabella
 
 		This file is part of Gadgetbridge.
 
