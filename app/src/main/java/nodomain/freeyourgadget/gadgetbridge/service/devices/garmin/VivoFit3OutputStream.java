@@ -69,6 +69,7 @@ private static final Logger LOG = LoggerFactory.getLogger(VivoFit3OutputStream.c
 					byte respStatus = bb.get();
 					if (!(respStatus == 0x00)) {
 						LOG.error("response status bad: " + respStatus);
+						finishWrite();
 						return;
 					}
 					short fIndex = bb.getShort();
