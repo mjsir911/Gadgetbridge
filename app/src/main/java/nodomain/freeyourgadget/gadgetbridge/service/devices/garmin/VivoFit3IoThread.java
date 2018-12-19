@@ -135,12 +135,12 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 							short responseId = tmpBb.getShort(4);
 							Queue<MyRunnable> responseCallbacks = callbacksMap.get(responseId);
 							if (responseCallbacks == null) {
-								LOG.debug("responsecallbacks is null for id " + responseId);
+								LOG.error("responsecallbacks is null for id " + responseId);
 								return true;
 							}
 							MyRunnable responseCallback = responseCallbacks.poll();
 							if (responseCallback == null) {
-								LOG.debug("responsecallback is null for id " + responseId);
+								LOG.error("responsecallback is null for id " + responseId);
 								return true;
 							}
 
@@ -261,8 +261,6 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 			byte[] newMessage = messageBuffer.array();
 
 
-			LOG.debug("cobs encode: " + Logging.formatBytes(newMessage));
-
 			int nextIndex = 0x01;
 			while (nextIndex != newMessage.length - 1) {
 				int currentIndex = nextIndex;
@@ -308,7 +306,7 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 			if (callback == null) {
 				callback = new MyRunnable() {
 					public void run(byte[] bytes) {
-						LOG.debug("Default response : " + Logging.formatBytes(bytes));
+						//LOG.debug("Default response : " + Logging.formatBytes(bytes));
 					}
 				};
 			}
@@ -323,7 +321,7 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 				}
 				Queue<MyRunnable> responseCallbacks = callbacksMap.get(id);
 				responseCallbacks.add(callback);
-				LOG.debug("Adding callback with id " + id + "to queue");
+				//LOG.debug("Adding callback with id " + id + "to queue");
 			}
 
 
@@ -350,7 +348,6 @@ class VivoFit3IoThread extends GBDeviceIoThread {
 
     @Override
     public void quit() {
-			LOG.debug("MARCO ______________thread quit_____________");
 			mSupport.onSyncComplete(); // system event (sync complete)
 			new TransactionBuilder("Disconnect")
 			.add(new PlainAction() {
