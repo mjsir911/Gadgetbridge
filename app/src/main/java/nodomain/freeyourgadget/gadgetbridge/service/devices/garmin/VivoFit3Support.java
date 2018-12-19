@@ -89,6 +89,13 @@ public class VivoFit3Support extends AbstractSerialDeviceSupport {
 		}
 	}
 
+	@Override
+	public void onReset(int flags) {
+		// what are flags?
+		super.onReset(flags);
+		getDeviceIOThread().quit();
+	}
+
 	public void onSyncComplete() {
 		byte[] bytes = ((VivoFit3Protocol) getDeviceProtocol()).encodeSyncComplete();
 		sendToDevice(bytes);

@@ -268,6 +268,12 @@ public class VivoFit3Protocol extends GBDeviceProtocol {
 			return encodeSystemEvent(SystemEventType.PAIR_COMPLETE, null);
 		};
 
+		public byte[] encodeReset(int flags) {
+			// what are flags?
+			return encodeSystemEvent(SystemEventType.FACTORY_RESET, null);
+		};
+
+
 
 		public byte[] encodeSetTime() {
 			ByteBuffer timeBB = ByteBuffer
