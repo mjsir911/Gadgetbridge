@@ -59,7 +59,6 @@ public class VivoFit3DeviceInfoOperation extends VivoFit3Operation {
 	}
 	public VivoFit3DeviceInfoOperation(VivoFit3Support support, int proto_version, int product_num, int unit_id, int software_version, int max_size, String name, String manufacturer, String model) {
 		this(support);
-		LOG.debug("___MARCO___ DeviceInfoOperation" + String.valueOf(getMessageType()));
 		this.proto_version = proto_version;
 		this.product_num = product_num;
 		this.unit_id = unit_id;

@@ -30,8 +30,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.InputStream;
+import java.io.DataInputStream;
 import java.io.ObjectInputStream;
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.SequenceInputStream;
+import java.util.Vector;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -86,6 +90,7 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 
 	@Override
 	protected TransactionBuilder initializeDevice(TransactionBuilder builder) {
+		LOG.debug("initializeDevice");
 		setState(builder, GBDevice.State.INITIALIZING);
 
 		BluetoothGattCharacteristic readCharacteristic = getCharacteristic(VivoFit3Constants.UUID_CHARACTERISTIC_READER);
@@ -110,7 +115,7 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		return builder;
 	}
 
-	private class  COBSDecoder extends FilterOutputStream {
+	private static class COBSDecoder extends FilterOutputStream {
 		public COBSDecoder(OutputStream out) {
 			super(out);
 		}
@@ -151,6 +156,42 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 			}
 			super.write(b);
 		}
+	}
+	private static class COBSEncoder extends BufferedInputStream {
+		private static int maxSize = 255; // Byte.MAX_VALUE & (byte) 0xFF;
+			public COBSEncoder(InputStream in) {
+				super(wrapInput(in), maxSize);
+			}
+
+			private static InputStream wrapInput(InputStream in) {
+				Vector<InputStream> streams = new Vector<>(3);
+				streams.add(new ByteArrayInputStream(new byte[] {0, 0}));
+				streams.add(in);
+				streams.add(new ByteArrayInputStream(new byte[] {0}));
+				return new SequenceInputStream(streams.elements());
+			}
+
+			private int countToNext = 2;
+			public int read() throws IOException {
+				LOG.debug("COBSEncode.read()");
+				countToNext--;
+				int next = super.read();
+				if (next == -1) {
+					return -1;
+				}
+				if (countToNext == 0) {
+					// assert next == 0;
+					mark(maxSize);
+					countToNext = 1;
+					while ((next = super.read()) > 0 && countToNext < maxSize) { countToNext++; } // just keep going
+					if (next == -1) {
+						countToNext = 0;
+					}
+					reset();
+					return countToNext;
+				}
+				return next;
+			};
 	}
 	private class DispatchStream extends OutputStream {
 		VivoFit3Support support;
@@ -228,6 +269,40 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		}
 		// LOG.debug(Logging.formatBytes(value));
 		return true;
+	}
+
+	private OutputStream uploadStream;
+	{
+		final PipedInputStream pipe_in = new PipedInputStream();
+		PipedOutputStream pipe_out = new PipedOutputStream();
+		try {
+			pipe_in.connect(pipe_out);
+		} catch (IOException e) {
+			LOG.error("blargh2");
+		}
+		uploadStream = pipe_out;
+		new Thread(new Runnable() {
+			public void run() {
+				DataInputStream in = new DataInputStream(new COBSEncoder(new CRCEncoder(new LengthPrefixer(pipe_in, 2))));
+				while (true) {
+					LOG.debug("uploadStream loop");
+					byte[] data = new byte[20];
+					try {
+						in.readFully(data);
+					} catch (IOException e) {
+						LOG.error("IOException 5");
+						break;
+					} finally {
+					//} catch (EOFException e) {
+					//	/* pass, eof is fine */
+						LOG.error("Sending bytes: " + Logging.formatBytes(data));
+					}
+				}
+			}
+		}).start();
+	}
+	public OutputStream getUploadStream() {
+		return uploadStream;
 	}
 
 

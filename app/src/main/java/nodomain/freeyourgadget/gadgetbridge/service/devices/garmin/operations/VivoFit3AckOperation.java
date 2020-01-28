@@ -44,14 +44,12 @@ public class VivoFit3AckOperation extends VivoFit3Operation {
 		messageType = 0x1388;
 	}
 
-	private int status = 89;
+	private int status = 0;
 	private VivoFit3Operation reply;
 	private VivoFit3Operation replyTo;
 
 	public VivoFit3AckOperation(VivoFit3Support support, VivoFit3Operation replyTo, VivoFit3Operation reply) {
 		super(support);
-		messageType = 0x1388;
-		LOG.debug("___MARCO___ AckOperation" + String.valueOf(getMessageType()));
 		this.replyTo = replyTo;
 		this.reply = reply;
 	}
@@ -68,6 +66,7 @@ public class VivoFit3AckOperation extends VivoFit3Operation {
 		out.writeByte(status);
 		if (reply != null) {
 			out.writeObject(reply);
+			out.writeByte(1);
 		}
 	}
 
