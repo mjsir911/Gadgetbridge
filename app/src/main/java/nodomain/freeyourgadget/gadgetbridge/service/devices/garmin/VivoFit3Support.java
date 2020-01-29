@@ -208,17 +208,16 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 	}
 
 	private static class Dispatcher implements Runnable {
-		final private ByteBufferObjectInputStream in;
 		final private VivoFit3Support support;
+		final InputStream in;
 		public Dispatcher(VivoFit3Support support, InputStream in) {
 			this.support = support;
+			this.in = in;
 			LOG.debug("Dispatcher(" + String.valueOf(in));
-			this.in = new ByteBufferObjectInputStream(in);
-			this.in.buffer.order(ByteOrder.LITTLE_ENDIAN);
 		}
 		public void run() {
-			byte[] bytes = new byte[40];
-			try {
+			try(ByteBufferObjectInputStream in = new ByteBufferObjectInputStream(this.in)) {
+				in.buffer.order(ByteOrder.LITTLE_ENDIAN);
 				LOG.debug("starting Dispatcher.run()");
 				short len = in.readShort();
 				LOG.debug("found len:  " + String.valueOf(len));
@@ -231,8 +230,6 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 			} catch (IOException e) {
 				LOG.debug("IOException 226");
 				/* pass */
-			} finally {
-				in.close();
 			}
 		}
 	}
