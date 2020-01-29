@@ -6,7 +6,7 @@ import java.io.BufferedOutputStream;
 
 public class LengthPrefixer extends BufferedOutputStream {
 	OutputStream out;
-	int length;
+	int length = 2; // magic
 	public LengthPrefixer(OutputStream out) {
 		super(out, 0xFFFF); // magic
 		this.out = out;
