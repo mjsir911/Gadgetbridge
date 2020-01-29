@@ -103,21 +103,20 @@ public class VivoFit3DeviceInfoOperation extends VivoFit3Operation {
 	public void readExternal(ObjectInput in) throws IOException {
 		super.readExternal(in);
 		proto_version = in.readUnsignedShort();
-		product_num = in.readUnsignedShort();
-		unit_id = in.readInt();
-		software_version = in.readUnsignedShort();
-		max_size = in.readUnsignedShort();
-		name = in.readUTF();
-		manufacturer = in.readUTF();
-		model = in.readUTF();
-
 		LOG.debug("proto_version: " + String.valueOf(proto_version));
+		product_num = in.readUnsignedShort();
 		LOG.debug("product_num: " + String.valueOf(product_num));
+		unit_id = in.readInt();
 		LOG.debug("unit_id: " + String.valueOf(unit_id));
+		software_version = in.readUnsignedShort();
 		LOG.debug("software_version: " + String.valueOf(software_version));
+		max_size = in.readUnsignedShort();
 		LOG.debug("max_size: " + String.valueOf(max_size));
+		name = in.readUTF();
 		LOG.debug("name" + name);
+		manufacturer = in.readUTF();
 		LOG.debug("manufacturer" + manufacturer);
+		model = in.readUTF();
 		LOG.debug("model" + model);
 	}
 }

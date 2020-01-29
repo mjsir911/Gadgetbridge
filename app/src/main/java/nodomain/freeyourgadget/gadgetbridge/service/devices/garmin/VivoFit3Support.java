@@ -19,13 +19,12 @@ package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin;
 import android.net.Uri;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.FilterOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
@@ -34,7 +33,12 @@ import java.io.DataInputStream;
 import java.io.ObjectInputStream;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.FilterOutputStream;
+import java.io.OutputStream;
 import java.io.SequenceInputStream;
+import java.util.zip.Checksum;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.BlockingDeque;
 import java.util.Vector;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -60,18 +64,20 @@ import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.devices.garmin.VivoFit3Constants;
 
 import nodomain.freeyourgadget.gadgetbridge.service.btle.AbstractBTLEDeviceSupport;
+import nodomain.freeyourgadget.gadgetbridge.service.btle.AbstractBTLEOperation;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.TransactionBuilder;
+import nodomain.freeyourgadget.gadgetbridge.service.btle.GattCallback;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.actions.*;
 
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.operations.VivoFit3Operation;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.operations.VivoFit3DeviceInfoOperation;
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.io.*;
 
 public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 	private static final Logger LOG = LoggerFactory.getLogger(VivoFit3Support.class);
 
 	public VivoFit3Support() {
 		super(LOG);
-		dispatch = new DispatchStream(this);
 		addSupportedService(VivoFit3Constants.UUID_SERVICE);
 	}
 
@@ -88,224 +94,166 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		return true;
 	}
 
+	private BluetoothGattCharacteristic readCharacteristic;
 	@Override
 	protected TransactionBuilder initializeDevice(TransactionBuilder builder) {
-		LOG.debug("initializeDevice");
 		setState(builder, GBDevice.State.INITIALIZING);
+		readCharacteristic = getCharacteristic(VivoFit3Constants.UUID_CHARACTERISTIC_READER);
 
-		BluetoothGattCharacteristic readCharacteristic = getCharacteristic(VivoFit3Constants.UUID_CHARACTERISTIC_READER);
+		cycleInputStream(builder);
 
-		builder.setGattCallback(this);
-		builder.notify(readCharacteristic, true);
-
-		// expect a device info packet (ack with info)
-		// new ExpectOperation<DeviceInfoOperation>(this, builder).perform();
-		// new setState(builder, GBDevice.State.INITIALIZED);
-		// expect a 0x13a3 packet (can ignore?)
-		// expect a 0x1393 packet (fit definition packet)
-		// expect a 0x1394 packet (fit data packet)
-		// send a 0x1393
-		// send a 0x1394
-		// ask for supported file types with 0x13a7
-		// new TimeSetOperation(this, builder).perform();
-		// and also send a 0x13a6 (system event message, 0x03)
-		//
-		// builder.add(new WaitAction(2000));
-		// setState(builder, GBDevice.State.WAITING_FOR_RECONNECT);
 		return builder;
 	}
 
-	private static class COBSDecoder extends FilterOutputStream {
-		public COBSDecoder(OutputStream out) {
-			super(out);
+	private static class CRC16 implements Checksum {
+		private static short polynomial = (short) 0x8005;
+		private short acc;
+
+		public void reset() {
+			acc = 0;
 		}
 
-		private byte counter = (byte) 0x77;
-		private boolean skipNext;
-		public void write(int b) throws IOException {
-			if (counter < 0) {
-				throw new IOException("asd");
+		public void update(int b) {
+			// b is actually a byte
+			// TODO
+		}
+		public void update(byte[] b, int off, int len) {
+			for (int i = off; i < off + len; i++) {
+				update(b[i]);
 			}
-
-			counter--;
-
-			if (b == 0) {
-				LOG.debug("starting crc decode : " + String.valueOf(counter));
-				/* start or end or err */
-				if (counter != 0) {
-					/* start */
-					counter = 1;
-					skipNext = true;
-				} else {
-					/* end or error */
-					LOG.debug("end");
-					counter = -1;
-				}
-				return;
-			}
-
-			// LOG.debug("writing byte : " + Integer.toHexString(b) + " : " + Integer.toHexString(counter));
-			if (counter == 0) {
-				/* we're at a 0 or a skip */
-				if (!skipNext) {
-					super.write(0);
-				}
-				counter = (byte) b; // why write() takes an int I'll never know
-				skipNext = counter == 0xFF;
-				return;
-			}
-			super.write(b);
+		}
+		public long getValue() {
+			return acc;
 		}
 	}
-	private static class COBSEncoder extends BufferedInputStream {
-		private static int maxSize = 255; // Byte.MAX_VALUE & (byte) 0xFF;
-			public COBSEncoder(InputStream in) {
-				super(wrapInput(in), maxSize);
-			}
 
-			private static InputStream wrapInput(InputStream in) {
-				Vector<InputStream> streams = new Vector<>(3);
-				streams.add(new ByteArrayInputStream(new byte[] {0, 0}));
-				streams.add(in);
-				streams.add(new ByteArrayInputStream(new byte[] {0}));
-				return new SequenceInputStream(streams.elements());
-			}
-
-			private int countToNext = 2;
-			public int read() throws IOException {
-				LOG.debug("COBSEncode.read()");
-				countToNext--;
-				int next = super.read();
-				if (next == -1) {
-					return -1;
-				}
-				if (countToNext == 0) {
-					// assert next == 0;
-					mark(maxSize);
-					countToNext = 1;
-					while ((next = super.read()) > 0 && countToNext < maxSize) { countToNext++; } // just keep going
-					if (next == -1) {
-						countToNext = 0;
-					}
-					reset();
-					return countToNext;
-				}
-				return next;
-			};
-	}
-	private class DispatchStream extends OutputStream {
+	private static class Uploader extends OutputStream {
 		VivoFit3Support support;
-		public DispatchStream(VivoFit3Support support) {
+		Uploader(VivoFit3Support support) {
 			super();
 			this.support = support;
 		}
-
-		private InputStream in;
-		private OutputStream out;
-
-		private OutputStream getStream() {
-			if (out != null) {
-				assert in != null : in;
-				return out;
-			}
-
-			PipedInputStream pipe_in = new PipedInputStream();
-			PipedOutputStream pipe_out = new PipedOutputStream();
-			try {
-				pipe_in.connect(pipe_out);
-			} catch (IOException e) {
-				LOG.error("blargh");
-			}
-			in = pipe_in;
-			out = new COBSDecoder(pipe_out);
-
-			new Thread(new Runnable() {
-				public void run() {
-					VivoFit3Operation op;
-					try {
-						int len = in.read() | (in.read() >> 8);
-						LOG.debug("MARCO VIVOFIT3 DISPATCH : " + String.valueOf(len));
-						in = new BufferedInputStream(in, len);
-
-						ByteBufferObjectInputStream bis = new ByteBufferObjectInputStream(in);
-						bis.buffer.order(ByteOrder.LITTLE_ENDIAN);
-						op = new VivoFit3DeviceInfoOperation(support);
-						op.readExternal(bis);
-						op.perform();
-					} catch (IOException e) {
-						LOG.error("blagh" + e.getMessage());
-						return;
-					} finally {
-						out = null;
-						in = null;
-					}
-				}
-			}).start();
-			return out;
+		public void write(int b) {
+			// TODO: accumulate & send bytes in 20 byte increments
 		}
-
-		public void write(int b) throws IOException {
-			getStream().write(b);
-		}
-	}
-
-	private static byte[] checkCRC(byte[] input) {
-		// just strip out the crc without checking
-		// for future reference crc algo is crc16-ansii 0x8002
-		byte[] ret = new byte[input.length - 2];
-		System.arraycopy(input, 0, ret, 0, input.length - 2);
-		return ret;
-	};
-
-	private OutputStream dispatch;
-	@Override
-	public boolean onCharacteristicChanged(BluetoothGatt gatt,
-	                                       BluetoothGattCharacteristic characteristic) {
-		try {
-			dispatch.write(characteristic.getValue());
-		} catch (IOException e) {
-			LOG.error("IOException");
-			return false;
-		}
-		// LOG.debug(Logging.formatBytes(value));
-		return true;
-	}
-
-	private OutputStream uploadStream;
-	{
-		final PipedInputStream pipe_in = new PipedInputStream();
-		PipedOutputStream pipe_out = new PipedOutputStream();
-		try {
-			pipe_in.connect(pipe_out);
-		} catch (IOException e) {
-			LOG.error("blargh2");
-		}
-		uploadStream = pipe_out;
-		new Thread(new Runnable() {
-			public void run() {
-				DataInputStream in = new DataInputStream(new COBSEncoder(new CRCEncoder(new LengthPrefixer(pipe_in, 2))));
-				while (true) {
-					LOG.debug("uploadStream loop");
-					byte[] data = new byte[20];
-					try {
-						in.readFully(data);
-					} catch (IOException e) {
-						LOG.error("IOException 5");
-						break;
-					} finally {
-					//} catch (EOFException e) {
-					//	/* pass, eof is fine */
-						LOG.error("Sending bytes: " + Logging.formatBytes(data));
-					}
-				}
-			}
-		}).start();
 	}
 	public OutputStream getUploadStream() {
-		return uploadStream;
+		return new LengthPrefixer(new CRCAdder(new COBSEncoder(new Uploader(this)), new CRC16()));
 	}
 
+	private class GattDownloadStream extends InputStream implements GattCallback {
+		private BlockingDeque<Byte> queue = new LinkedBlockingDeque<>();
+		private boolean closed = false;
+		public int read() throws IOException {
+			if (closed) {
+				return -1;
+			}
+			try {
+				return queue.takeFirst() & 0xFF;
+			} catch (InterruptedException e) {
+				throw new IOException(e);
+			}
+		}
+		@Override
+		public boolean onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+			byte[] value = characteristic.getValue();
+			for (int i = 0; i < value.length; i++) {
+				if (!queue.offerLast(value[i])) {
+					return false;
+				};
+			}
+			if (value[value.length - 1] == 0x00) {
+				cycleInputStream();
+				// end of the line
+			}
+			return true;
+    }
 
+		// taken from AbstractGattCallback
+		@Override
+		public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+		}
+
+		@Override
+		public void onServicesDiscovered(BluetoothGatt gatt) {
+		}
+
+		@Override
+		public boolean onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+			return false;
+		}
+
+		@Override
+		public boolean onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+			return false;
+		}
+
+		@Override
+		public boolean onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+			return false;
+		}
+
+		@Override
+		public boolean onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+			return false;
+		}
+
+		@Override
+		public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
+		}
+
+		@Override
+		public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+		}
+	}
+
+	private static class Dispatcher implements Runnable {
+		final private ByteBufferObjectInputStream in;
+		final private VivoFit3Support support;
+		public Dispatcher(VivoFit3Support support, InputStream in) {
+			this.support = support;
+			LOG.debug("Dispatcher(" + String.valueOf(in));
+			this.in = new ByteBufferObjectInputStream(in);
+			this.in.buffer.order(ByteOrder.LITTLE_ENDIAN);
+		}
+		public void run() {
+			byte[] bytes = new byte[40];
+			try {
+				LOG.debug("starting Dispatcher.run()");
+				short len = in.readShort();
+				LOG.debug("found len:  " + String.valueOf(len));
+				short type = in.readShort();
+				LOG.debug("found type: 0x" + Integer.toHexString(type));
+				assert type == 0x13a0;
+				VivoFit3Operation op = new VivoFit3DeviceInfoOperation(support);
+				op.readExternal(in);
+				op.perform();
+			} catch (IOException e) {
+				LOG.debug("IOException 226");
+				/* pass */
+			} finally {
+				in.close();
+			}
+		}
+	}
+
+	public void cycleInputStream(TransactionBuilder builder) {
+		final GattDownloadStream in = new GattDownloadStream();
+		builder.setGattCallback(in);
+		builder.notify(readCharacteristic, true);
+		Dispatcher op;
+		op = new Dispatcher(this, new CRCChecker(new COBSDecoder(in), new CRC16()));
+		new Thread(op).start();
+	}
+	public void cycleInputStream() {
+		TransactionBuilder builder = createTransactionBuilder("RX Stream");
+		cycleInputStream(builder);
+		try {
+			performImmediately(builder);
+		} catch (IOException e) {
+			LOG.error("IOException 252");
+		}
+	}
 
 	private TransactionBuilder setState(TransactionBuilder builder, GBDevice.State state) {
 		return builder.add(new SetDeviceStateAction(getDevice(), state, getContext()));

@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public class ByteBufferObjectOutputStream extends FilterOutputStream implements ObjectOutput {  
-	public ByteBuffer buffer;
+	final public ByteBuffer buffer;
 	public ByteBufferObjectOutputStream(OutputStream out) {
 		super(out);
 		buffer = ByteBuffer.allocate(8);

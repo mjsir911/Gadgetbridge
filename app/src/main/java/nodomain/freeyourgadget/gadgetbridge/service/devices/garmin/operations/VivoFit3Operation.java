@@ -82,7 +82,5 @@ abstract public class VivoFit3Operation extends AbstractBTLEOperation<VivoFit3Su
 	public void readExternal(ObjectInput in) throws IOException {
 		setRecieving();
 		LOG.debug("__MARCO__ readExternal");
-		int type = in.readUnsignedShort();
-		assert type == getMessageType() : type;
 	}
 }

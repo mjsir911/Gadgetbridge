@@ -12,7 +12,7 @@ import java.nio.ByteOrder;
 import java.io.IOException;
 
 class ByteBufferObjectInputStream extends FilterInputStream implements ObjectInput {
-	public ByteBuffer buffer;
+	final public ByteBuffer buffer;
 	ByteBufferObjectInputStream(InputStream in) {
 		super(in);
 		buffer = ByteBuffer.allocate(8); // 64 bits
@@ -74,10 +74,14 @@ class ByteBufferObjectInputStream extends FilterInputStream implements ObjectInp
 		return (int) skip(n);
 	}
 	public void readFully(byte[] b) throws IOException {
-		read(b);
+		if (read(b) != b.length) {
+			throw new IOException("hi");
+		}
 	}
 	public void readFully(byte[] b, int off, int len) throws IOException {
-		read(b, off, len);
+		if (read(b, off, len) != len) {
+			throw new IOException("hello");
+		}
 	}
 	public Object readObject() {
 		throw new UnsupportedOperationException("readObject");
