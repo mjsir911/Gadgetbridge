@@ -65,11 +65,13 @@ abstract public class VivoFit3Operation extends AbstractBTLEOperation<VivoFit3Su
 	}
 	protected void doSend() throws IOException {
 		LOG.debug("Sending: " + String.valueOf(this));
-		OutputStream out = getSupport().getUploadStream();
-		ByteBufferObjectOutputStream bos = new ByteBufferObjectOutputStream(out);
-		bos.buffer.order(ByteOrder.LITTLE_ENDIAN);
-		writeHeader(bos);
-		writeExternal(bos);
+		try (OutputStream out = getSupport().getUploadStream()) {
+			ByteBufferObjectOutputStream bos = new ByteBufferObjectOutputStream(out);
+			bos.buffer.order(ByteOrder.LITTLE_ENDIAN);
+			writeHeader(bos);
+			LOG.debug("sending the rest");
+			writeExternal(bos);
+		}
 	}
 	protected void doRecieve() throws IOException {
 		new VivoFit3AckOperation(getSupport(), this).perform();
