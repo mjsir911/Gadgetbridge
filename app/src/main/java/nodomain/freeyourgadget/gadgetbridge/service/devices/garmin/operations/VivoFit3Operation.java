@@ -1,4 +1,4 @@
-/*  Copyright (C) 2019-2020 Andreas Böhler
+/*  Copyright (C) 2020 Marco Sirabella
 
     This file is part of Gadgetbridge.
 
