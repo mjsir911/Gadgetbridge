@@ -107,7 +107,7 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 
 	private static class CRC16 implements Checksum {
 		private static short polynomial = (short) 0x8005;
-		private short acc;
+		private short acc = 0xABCD;
 
 		public void reset() {
 			acc = 0;
