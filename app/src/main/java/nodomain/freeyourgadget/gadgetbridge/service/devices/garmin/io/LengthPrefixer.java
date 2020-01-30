@@ -20,10 +20,14 @@ public class LengthPrefixer extends BufferedOutputStream {
 		length += len;
 	}
 	public void flush() throws IOException {
+		/* no flush pls */
+	}
+	public void close() throws IOException {
 		// go around the buffer to write at the beginning
 		out.write(length & 0xFF);
 		out.write(length >> 8);
 		super.flush();
+		super.close();
 	}
 
 	public static void main(String args[]) {

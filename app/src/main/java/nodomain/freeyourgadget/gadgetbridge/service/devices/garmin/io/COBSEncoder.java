@@ -19,7 +19,8 @@ public class COBSEncoder extends BufferedOutputStream {
 		counter++;
 		if (b == 0) {
 			out.write(counter);
-			flush();
+			// TODO: don't use flush so sparingly
+			super.flush();
 			counter = 0;
 			return;
 		}
@@ -30,8 +31,13 @@ public class COBSEncoder extends BufferedOutputStream {
 			write(b[i]);
 		}
 	}
+	public void flush() throws IOException {
+		/* no flush pls */
+	}
 	public void close() throws IOException {
+		write(0);
 		out.write(0);
+		super.flush();
 		super.close();
 	}
 	public static void main(String args[]) {
