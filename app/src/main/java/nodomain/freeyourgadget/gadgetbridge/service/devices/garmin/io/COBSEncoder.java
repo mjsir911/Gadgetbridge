@@ -8,7 +8,7 @@ public class COBSEncoder extends BufferedOutputStream {
 	private static int MAX_SIZE = 0xFF;
 	private int counter = 0;
 	public COBSEncoder(OutputStream out) {
-		super(out, MAX_SIZE + 1);
+		super(out, MAX_SIZE);
 		try {
 			out.write(0);
 		} catch (IOException e) {

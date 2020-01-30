@@ -39,6 +39,8 @@ import java.io.SequenceInputStream;
 import java.util.zip.Checksum;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.BlockingDeque;
+import java.util.Deque;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.Vector;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -95,10 +97,12 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 	}
 
 	private BluetoothGattCharacteristic readCharacteristic;
+	private BluetoothGattCharacteristic writeCharacteristic;
 	@Override
 	protected TransactionBuilder initializeDevice(TransactionBuilder builder) {
 		setState(builder, GBDevice.State.INITIALIZING);
 		readCharacteristic = getCharacteristic(VivoFit3Constants.UUID_CHARACTERISTIC_READER);
+		writeCharacteristic = getCharacteristic(VivoFit3Constants.UUID_CHARACTERISTIC_WRITER);
 
 		cycleInputStream(builder);
 
@@ -128,17 +132,43 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 	}
 
 	private static class Uploader extends OutputStream {
-		VivoFit3Support support;
+		final private VivoFit3Support support;
+		final private TransactionBuilder builder;
+		final private ArrayBlockingQueue<Byte> queue = new ArrayBlockingQueue<>(20); // size of btle packet
 		Uploader(VivoFit3Support support) {
 			super();
 			this.support = support;
+			builder = support.createTransactionBuilder("TX");
 		}
-		public void write(int b) {
+		public void write(int b) throws IOException {
+			LOG.debug("upload writing : 0x" + Integer.toHexString(b & 0xFF));
 			// TODO: accumulate & send bytes in 20 byte increments
+			queue.add((byte) b);
+			if (queue.size() == 20) {
+				send();
+			}
+		}
+		// TODO: this should really be flush
+		private void send() throws IOException {
+			LOG.debug("Uploader.flush() @ queue.size() == " + String.valueOf(queue.size()));
+			Byte[] B = new Byte[queue.size()];
+			queue.toArray(B);
+			queue.clear();
+			byte[] b = new byte[B.length];
+			for (int i = 0; i < B.length; i++) {
+				b[i] = B[i];
+				LOG.debug("Dequeing: 0x" + Integer.toHexString(b[i] & 0xFF));
+			}
+			builder.write(support.writeCharacteristic, b);
+		}
+		public void close() throws IOException {
+			send();
+			support.performImmediately(builder);
 		}
 	}
 	public OutputStream getUploadStream() {
 		return new LengthPrefixer(new CRCAdder(new COBSEncoder(new Uploader(this)), new CRC16()));
+		// return new CRCAdder(new COBSEncoder(new Uploader(this)), new CRC16());
 	}
 
 	private class GattDownloadStream extends InputStream implements GattCallback {
