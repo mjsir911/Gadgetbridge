@@ -103,8 +103,10 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		setState(builder, GBDevice.State.INITIALIZING);
 		readCharacteristic = getCharacteristic(VivoFit3Constants.UUID_CHARACTERISTIC_READER);
 		writeCharacteristic = getCharacteristic(VivoFit3Constants.UUID_CHARACTERISTIC_WRITER);
+		builder.notify(readCharacteristic, true);
+		builder.setGattCallback(this);
 
-		cycleInputStream(builder);
+		cycleInputStream();
 
 		return builder;
 	}
@@ -167,90 +169,21 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		// return new CRCAdder(new COBSEncoder(new Uploader(this)), new CRC16());
 	}
 
-	private class GattDownloadStream extends InputStream implements GattCallback {
-		private BlockingDeque<Byte> queue = new LinkedBlockingDeque<>();
-		private boolean closed = false;
-		public int read() throws IOException {
-			if (closed) {
-				return -1;
-			}
-			try {
-				return queue.takeFirst() & 0xFF;
-			} catch (InterruptedException e) {
-				throw new IOException(e);
-			}
-		}
-		@Override
-		public boolean onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-			byte[] value = characteristic.getValue();
-			for (int i = 0; i < value.length; i++) {
-				if (!queue.offerLast(value[i])) {
-					return false;
-				};
-			}
-			if (value[value.length - 1] == 0x00) {
-				cycleInputStream();
-				// end of the line
-			}
-			return true;
-    }
-
-		// taken from AbstractGattCallback
-		@Override
-		public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-		}
-
-		@Override
-		public void onServicesDiscovered(BluetoothGatt gatt) {
-		}
-
-		@Override
-		public boolean onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-			return false;
-		}
-
-		@Override
-		public boolean onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-			return false;
-		}
-
-		@Override
-		public boolean onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-			return false;
-		}
-
-		@Override
-		public boolean onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-			return false;
-		}
-
-		@Override
-		public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
-		}
-
-		@Override
-		public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
-		}
-	}
-
 	private static class Dispatcher implements Runnable {
 		final private VivoFit3Support support;
 		final InputStream in;
 		public Dispatcher(VivoFit3Support support, InputStream in) {
 			this.support = support;
 			this.in = in;
-			LOG.debug("Dispatcher(" + String.valueOf(in));
 		}
 		public void run() {
 			try(ByteBufferObjectInputStream in = new ByteBufferObjectInputStream(this.in)) {
 				in.buffer.order(ByteOrder.LITTLE_ENDIAN);
-				LOG.debug("starting Dispatcher.run()");
-				short len = in.readShort();
-				LOG.debug("found len:  " + String.valueOf(len));
-				short type = in.readShort();
-				LOG.debug("found type: 0x" + Integer.toHexString(type));
-				assert type == 0x13a0;
-				VivoFit3Operation op = new VivoFit3DeviceInfoOperation(support);
+				VivoFit3Operation op = VivoFit3Operation.dispatch(support, in);
+				if (op == null) {
+					LOG.error("dispatch returned none");
+					return;
+				}
 				op.readExternal(in);
 				op.perform();
 			} catch (IOException e) {
@@ -260,22 +193,43 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		}
 	}
 
-	public void cycleInputStream(TransactionBuilder builder) {
-		final GattDownloadStream in = new GattDownloadStream();
-		builder.setGattCallback(in);
-		builder.notify(readCharacteristic, true);
-		Dispatcher op;
-		op = new Dispatcher(this, new CRCChecker(new COBSDecoder(in), new CRC16()));
+	private OutputStream queue_stream;
+	private void cycleInputStream() {
+		LOG.debug("MARCO doing input stream");
+		final PipedInputStream in = new PipedInputStream();
+		final PipedOutputStream out = new PipedOutputStream();
+		try {
+			out.connect(in);
+		} catch (IOException e) {
+			LOG.error("really shouldn't happen");
+		}
+		queue_stream = out;
+		// final GattDownloadStream in = new GattDownloadStream();
+		Dispatcher op = new Dispatcher(this, new CRCChecker(new COBSDecoder(in), new CRC16()));
 		new Thread(op).start();
 	}
-	public void cycleInputStream() {
-		TransactionBuilder builder = createTransactionBuilder("RX Stream");
-		cycleInputStream(builder);
+
+	public boolean onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+		byte[] value = characteristic.getValue();
+		LOG.debug("MARCO@@@@@@@@@@ characteristicchanged 1");
 		try {
-			performImmediately(builder);
+			queue_stream.write(value);
 		} catch (IOException e) {
-			LOG.error("IOException 252");
+			return false;
 		}
+		LOG.debug("MARCO@@@@@@@@@@ characteristicchanged 2");
+		if (value[value.length - 1] == 0x00) {
+			try {
+				queue_stream.close();
+			} catch (IOException e) {
+				// this isn't really a problem
+				LOG.error("couldn't close queue stream");
+			}
+			LOG.debug("END OF STREAM, cycling");
+			cycleInputStream();
+			// end of the line
+		}
+		return true;
 	}
 
 	private TransactionBuilder setState(TransactionBuilder builder, GBDevice.State state) {
