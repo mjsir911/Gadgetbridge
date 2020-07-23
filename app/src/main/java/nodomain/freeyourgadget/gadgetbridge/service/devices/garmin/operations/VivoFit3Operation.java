@@ -53,6 +53,7 @@ abstract public class VivoFit3Operation extends AbstractBTLEOperation<VivoFit3Su
 		return messageType;
 	}
 	protected void doPerform() throws IOException {
+		LOG.debug("VivoFit3Operation.doPerform()");
 		try {
 			if (recieving) {
 				doRecieve();
@@ -78,11 +79,26 @@ abstract public class VivoFit3Operation extends AbstractBTLEOperation<VivoFit3Su
 	}
 
 	public void writeHeader(ObjectOutput out) throws IOException {
+		LOG.debug("sending header");
 		out.writeShort(getMessageType());
 	}
 
 	public void readExternal(ObjectInput in) throws IOException {
 		setRecieving();
 		LOG.debug("__MARCO__ readExternal");
+	}
+
+	static public VivoFit3Operation dispatch(VivoFit3Support support, ObjectInput in) throws IOException {
+		short len = in.readShort();
+		LOG.debug("found len:  " + String.valueOf(len));
+		short type = in.readShort();
+		LOG.debug("found type: 0x" + Integer.toHexString(type));
+		switch (type) {
+			case 0x13a0: return new VivoFit3DeviceInfoOperation(support);
+			case 0x13a3: return new VivoFit3WhatOneOperation(support, (short) 0x13a3, new byte[] {0x00});
+			case 0x1393: return new VivoFit3WhatOneOperation(support, (short) 0x1393, new byte[] {0x00});
+			case 0x1394: return new VivoFit3WhatOneOperation(support, (short) 0x1394, new byte[] {0x00});
+		}
+		return null;
 	}
 }

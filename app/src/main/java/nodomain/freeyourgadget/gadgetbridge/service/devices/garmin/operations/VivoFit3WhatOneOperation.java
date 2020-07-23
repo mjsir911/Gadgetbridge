@@ -18,6 +18,7 @@ package nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.operations;
 
 import android.os.Build;
 import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothGattCharacteristic;
 
 import org.slf4j.Logger;
@@ -38,46 +39,28 @@ import nodomain.freeyourgadget.gadgetbridge.service.btle.TransactionBuilder;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.actions.SetDeviceStateAction;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.VivoFit3Support;
 
-public class VivoFit3AckOperation extends VivoFit3Operation {
-	private static final Logger LOG = LoggerFactory.getLogger(VivoFit3AckOperation.class);
-	{
-		messageType = 0x1388;
-	}
+public class VivoFit3WhatOneOperation extends VivoFit3Operation {
+	private static final Logger LOG = LoggerFactory.getLogger(VivoFit3WhatOneOperation.class);
+	private final byte[] data;
 
-	private int status = 0;
-	private VivoFit3Operation reply;
-	private VivoFit3Operation replyTo;
-
-	public VivoFit3AckOperation(VivoFit3Support support, VivoFit3Operation replyTo, VivoFit3Operation reply) {
+	public VivoFit3WhatOneOperation(VivoFit3Support support, short mtype, byte[] data) {
 		super(support);
-		this.replyTo = replyTo;
-		this.reply = reply;
-		LOG.debug("VivoFit3AckOperation()");
-	}
-	public VivoFit3AckOperation(VivoFit3Support support, VivoFit3Operation replyTo) {
-		this(support, replyTo, null);
+		messageType = mtype;
+		this.data = data;
 	}
 
+	@Override
 	protected void doRecieve() throws IOException {
-		/* nothing */
+		LOG.debug("whatOneRecieve");
+		new VivoFit3AckOperation(getSupport(), this, new VivoFit3BytesOperation(getSupport(), messageType, data)).perform();
 	}
 
 	public void writeExternal(ObjectOutput out) throws IOException {
-		LOG.debug("AckOp.writeExternal()");
-		replyTo.writeHeader(out);
-		out.writeByte(status);
-		if (reply != null) {
-			out.writeObject(reply);
-		}
+		/* nothing... for now */
 	}
 
 	public void readExternal(ObjectInput in) throws IOException {
 		super.readExternal(in);
-		status = in.readByte();
-		try {
-			reply = (VivoFit3Operation) in.readObject();
-		} catch (ClassNotFoundException e) {
-			reply = null;
-		}
+		/* nothing... for now */
 	}
 }

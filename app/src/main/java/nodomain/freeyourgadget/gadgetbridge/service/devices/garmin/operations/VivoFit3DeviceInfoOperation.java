@@ -98,6 +98,7 @@ public class VivoFit3DeviceInfoOperation extends VivoFit3Operation {
 		out.writeUTF(name);
 		out.writeUTF(manufacturer);
 		out.writeUTF(model);
+		out.write(1); // what's this?
 	}
 
 	public void readExternal(ObjectInput in) throws IOException {

@@ -72,7 +72,7 @@ import nodomain.freeyourgadget.gadgetbridge.service.btle.GattCallback;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.actions.*;
 
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.operations.VivoFit3Operation;
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.operations.VivoFit3DeviceInfoOperation;
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.operations.VivoFit3TimeSetOperation;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.io.*;
 
 public class VivoFit3Support extends AbstractBTLEDeviceSupport {
@@ -143,8 +143,7 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 			builder = support.createTransactionBuilder("TX");
 		}
 		public void write(int b) throws IOException {
-			LOG.debug("upload writing : 0x" + Integer.toHexString(b & 0xFF));
-			// TODO: accumulate & send bytes in 20 byte increments
+			// LOG.debug("upload writing : 0x" + Integer.toHexString(b & 0xFF));
 			deque.add((byte) b);
 			if (deque.size() == 20) {
 				send();
@@ -247,13 +246,13 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 
 	@Override
 	public void onAppConfiguration(UUID uuid, String config, Integer id) {
-		LOG.debug(config);
+		// LOG.debug(config);
 		// TODO: do this
 	}
 
 	public void onInstallApp(Uri uri) {
 		// TODO: do this
-		LOG.debug(uri.toString());
+		// LOG.debug(uri.toString());
 	}
 
 	@Override
@@ -277,7 +276,10 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 	public void onDeleteNotification(int id) { /* nothing */ }
 	@Override
 	public void onSetTime() {
-		LOG.debug("__MARCO__ onSetTime");
+		LOG.debug("@@@@@@@@@@__MARCO__@@@@@@@@ onSetTime");
+		try {
+			new VivoFit3TimeSetOperation(this).perform();
+		} catch (IOException e) {};
 		/* nothing */ 
 	}
 	@Override
