@@ -37,18 +37,9 @@ import java.io.FilterOutputStream;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
 import java.util.zip.Checksum;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.BlockingDeque;
-import java.util.Deque;
-import java.util.ArrayDeque;
-import java.util.Vector;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.UUID;
-import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 import java.lang.Byte;
 
 import nodomain.freeyourgadget.gadgetbridge.model.Alarm;
@@ -287,10 +278,21 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 	@Override
 	public void onSetTime() {
 		LOG.debug("@@@@@@@@@@__MARCO__@@@@@@@@ onSetTime");
+
+		final int base = 631065600; // jan 1 1990
+		long now_ms = System.currentTimeMillis(); // will break in the year 2126
+		TimeZone timeZone = TimeZone.getDefault();
+		int dstOffset = timeZone.inDaylightTime(new Date(now_ms)) ? timeZone.getDSTSavings() / 1000 : 0;
+		int timeZoneOffset = timeZone.getOffset(now_ms) / 1000;
+
+		final Map<VivoFit3SetSettingsOperation.Setting, Object> settings = new LinkedHashMap<>(3);
+		settings.put(VivoFit3SetSettingsOperation.Setting.TIME, (int) (now_ms / 1000 - base));
+		settings.put(VivoFit3SetSettingsOperation.Setting.DST_OFFSET, dstOffset);
+		settings.put(VivoFit3SetSettingsOperation.Setting.TZ_OFFSET, timeZoneOffset);
+
 		try {
-			new VivoFit3TimeSetOperation(this).perform();
+			new VivoFit3SetSettingsOperation(this, settings).perform();
 		} catch (IOException e) {};
-		/* nothing */ 
 	}
 	@Override
 	public void onSetCallState(CallSpec callSpec) { /* nothing */ }
