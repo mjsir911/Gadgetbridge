@@ -21,6 +21,7 @@ class ByteBufferObjectInputStream extends FilterInputStream implements ObjectInp
 	private void readBytesToBuffer(int n) throws IOException {
 		assert n <= 8;
 		read(buffer.array(), 0, n);
+		buffer.rewind();
 	}
 
 	public String readUTF() throws IOException {
@@ -33,27 +34,27 @@ class ByteBufferObjectInputStream extends FilterInputStream implements ObjectInp
 	}
 	public double readDouble() throws IOException {
 		readBytesToBuffer(Double.SIZE / 8);
-		return buffer.getDouble(0);
+		return buffer.getDouble();
 	}
 	public float readFloat() throws IOException {
 		readBytesToBuffer(Float.SIZE / 8);
-		return buffer.getFloat(0);
+		return buffer.getFloat();
 	}
 	public long readLong() throws IOException {
 		readBytesToBuffer(Long.SIZE / 8);
-		return buffer.getLong(0);
+		return buffer.getLong();
 	}
 	public int readInt() throws IOException {
 		readBytesToBuffer(Integer.SIZE / 8);
-		return buffer.getInt(0);
+		return buffer.getInt();
 	}
 	public char readChar() throws IOException {
 		readBytesToBuffer(Character.SIZE / 8);
-		return buffer.getChar(0);
+		return buffer.getChar();
 	}
 	public short readShort() throws IOException {
 		readBytesToBuffer(Short.SIZE / 8);
-		return buffer.getShort(0);
+		return buffer.getShort();
 	}
 	public int readUnsignedShort() throws IOException {
 		// return Short.toUnsignedInt(readShort());
@@ -61,7 +62,7 @@ class ByteBufferObjectInputStream extends FilterInputStream implements ObjectInp
 	}
 	public byte readByte() throws IOException {
 		readBytesToBuffer(Byte.SIZE / 8);
-		return buffer.get(0);
+		return buffer.get();
 	}
 	public int readUnsignedByte() throws IOException {
 		// return Byte.toUnsignedInt(readByte());

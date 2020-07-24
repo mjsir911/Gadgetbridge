@@ -19,6 +19,7 @@ public class ByteBufferObjectOutputStream extends FilterOutputStream implements 
 	private void writeBytesFromBuffer(int n) throws IOException {
 		assert n <= 8;
 		write(buffer.array(), 0, n);
+		buffer.clear();
 	}
 
 	public void writeUTF(String s) throws IOException {
@@ -32,31 +33,31 @@ public class ByteBufferObjectOutputStream extends FilterOutputStream implements 
 		throw new UnsupportedOperationException("writeBytes");
 	}
 	public void writeDouble(double v) throws IOException {
-		buffer.putDouble(0, v);
+		buffer.putDouble(v);
 		writeBytesFromBuffer(Double.SIZE / 8);
 	}
 	public void writeFloat(float v) throws IOException {
-		buffer.putFloat(0, v);
+		buffer.putFloat(v);
 		writeBytesFromBuffer(Float.SIZE / 8);
 	}
 	public void writeLong(long v) throws IOException {
-		buffer.putLong(0, v);
+		buffer.putLong(v);
 		writeBytesFromBuffer(Long.SIZE / 8);
 	}
 	public void writeInt(int v) throws IOException {
-		buffer.putInt(0, v);
+		buffer.putInt(v);
 		writeBytesFromBuffer(Integer.SIZE / 8);
 	}
 	public void writeShort(int v) throws IOException {
-		buffer.putShort(0, (short) v);
+		buffer.putShort((short) v);
 		writeBytesFromBuffer(Short.SIZE / 8);
 	}
 	public void writeChar(int v) throws IOException {
-		buffer.putChar(0, (char) v);
+		buffer.putChar((char) v);
 		writeBytesFromBuffer(Character.SIZE / 8);
 	}
 	public void writeByte(int v) throws IOException {
-		buffer.put(0, (byte) v);
+		buffer.put((byte) v);
 		writeBytesFromBuffer(Byte.SIZE / 8);
 	}
 	public void writeBoolean(boolean v) throws IOException {
