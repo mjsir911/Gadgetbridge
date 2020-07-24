@@ -339,9 +339,11 @@ public final class BtLEQueue {
         }
         mDisposed = true;
         try {
+          if (mTransactions.isEmpty()) {
+            dispatchThread.interrupt();
+          }
           dispatchThread.join();
           disconnect();
-          dispatchThread.interrupt();
           dispatchThread = null;
         } catch (InterruptedException ex) {
             LOG.error("Exception while disposing BtLEQueue", ex);
