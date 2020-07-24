@@ -36,7 +36,6 @@ import java.io.ByteArrayInputStream;
 import java.io.FilterOutputStream;
 import java.io.OutputStream;
 import java.io.SequenceInputStream;
-import java.util.zip.Checksum;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
@@ -98,29 +97,8 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 
 		cycleInputStream();
 
+
 		return builder;
-	}
-
-	private static class CRC16 implements Checksum {
-		private static short polynomial = (short) 0x8005;
-		private short acc = (short) 0xABCD;
-
-		public void reset() {
-			acc = 0;
-		}
-
-		public void update(int b) {
-			// b is actually a byte
-			// TODO
-		}
-		public void update(byte[] b, int off, int len) {
-			for (int i = off; i < off + len; i++) {
-				update(b[i]);
-			}
-		}
-		public long getValue() {
-			return acc;
-		}
 	}
 
 	private static class Uploader extends OutputStream {
@@ -153,7 +131,7 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		}
 	}
 	public OutputStream getUploadStream(TransactionBuilder builder) {
-		return new LengthPrefixer(new CRCAdder(new COBSEncoder(new Uploader(builder, this.writeCharacteristic)), new CRC16()));
+		return new LengthPrefixer(new CRCAdder(new COBSEncoder(new Uploader(builder, this.writeCharacteristic)), new CRC16.IBM()));
 	}
 
 	private static class Dispatcher implements Runnable {
@@ -198,7 +176,7 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		}
 		queue_stream = out;
 		// final GattDownloadStream in = new GattDownloadStream();
-		Dispatcher op = new Dispatcher(this, new CRCChecker(new COBSDecoder(in), new CRC16()));
+		Dispatcher op = new Dispatcher(this, new CRCChecker(new COBSDecoder(in), new CRC16.IBM()));
 		new Thread(op).start();
 	}
 
