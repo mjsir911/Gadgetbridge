@@ -71,8 +71,7 @@ import nodomain.freeyourgadget.gadgetbridge.service.btle.TransactionBuilder;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.GattCallback;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.actions.*;
 
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.operations.VivoFit3Operation;
-import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.operations.VivoFit3TimeSetOperation;
+import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.operations.*;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.garmin.io.*;
 
 public class VivoFit3Support extends AbstractBTLEDeviceSupport {
@@ -267,7 +266,14 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 	@Override
 	public void onReset(int flags) { /* nothing */ }
 
-
+	@Override
+	public void dispose() {
+		LOG.info("Dispose");
+		try {
+			new VivoFit3SystemEventOperation(this, new byte[] {0x01, 0x01, 0x00}).perform();
+		} catch (IOException e) {};
+		super.dispose();
+	}
 
 
 	@Override
