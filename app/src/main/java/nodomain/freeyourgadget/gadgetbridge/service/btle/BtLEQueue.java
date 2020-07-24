@@ -333,18 +333,19 @@ public final class BtLEQueue {
     }
 
     public void dispose() {
+        LOG.debug("dispose()");
         if (mDisposed) {
             return;
         }
         mDisposed = true;
-//        try {
-        disconnect();
-        dispatchThread.interrupt();
-        dispatchThread = null;
-//            dispatchThread.join();
-//        } catch (InterruptedException ex) {
-//            LOG.error("Exception while disposing BtLEQueue", ex);
-//        }
+        try {
+          dispatchThread.join();
+          disconnect();
+          dispatchThread.interrupt();
+          dispatchThread = null;
+        } catch (InterruptedException ex) {
+            LOG.error("Exception while disposing BtLEQueue", ex);
+        }
     }
 
     /**
