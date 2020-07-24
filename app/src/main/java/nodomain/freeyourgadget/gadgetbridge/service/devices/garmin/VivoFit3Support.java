@@ -133,13 +133,13 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 	}
 
 	private static class Uploader extends OutputStream {
-		final private VivoFit3Support support;
 		final private TransactionBuilder builder;
+		final private BluetoothGattCharacteristic write;
 		final private Deque<Byte> deque = new ArrayDeque<>(20); // size of btle packet
-		Uploader(VivoFit3Support support) {
+		Uploader(TransactionBuilder builder, BluetoothGattCharacteristic write) {
 			super();
-			this.support = support;
-			builder = support.createTransactionBuilder("TX");
+			this.builder = builder;
+			this.write = write;
 		}
 		public void write(int b) throws IOException {
 			// LOG.debug("upload writing : 0x" + Integer.toHexString(b & 0xFF));
@@ -155,16 +155,14 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 			for (int i = 0; i < size; i++) {
 				b[i] = deque.remove();
 			}
-			builder.write(support.writeCharacteristic, b);
+			builder.write(write, b);
 		}
 		public void close() throws IOException {
 			send();
-			support.performImmediately(builder);
 		}
 	}
-	public OutputStream getUploadStream() {
-		return new LengthPrefixer(new CRCAdder(new COBSEncoder(new Uploader(this)), new CRC16()));
-		// return new CRCAdder(new COBSEncoder(new Uploader(this)), new CRC16());
+	public OutputStream getUploadStream(TransactionBuilder builder) {
+		return new LengthPrefixer(new CRCAdder(new COBSEncoder(new Uploader(builder, this.writeCharacteristic)), new CRC16()));
 	}
 
 	private static class Dispatcher implements Runnable {
@@ -175,6 +173,7 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 			this.in = in;
 		}
 		public void run() {
+			TransactionBuilder builder = support.createTransactionBuilder("Reply");
 			try(ByteBufferObjectInputStream in = new ByteBufferObjectInputStream(this.in)) {
 				in.buffer.order(ByteOrder.LITTLE_ENDIAN);
 				VivoFit3Operation op = VivoFit3Operation.dispatch(support, in);
@@ -182,12 +181,17 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 					LOG.error("dispatch returned none");
 					return;
 				}
-				op.readExternal(in);
-				op.perform();
+				try {
+					op.readExternal(in);
+				} catch (ClassNotFoundException e) {
+					LOG.error("ClassNotFoundException 187");
+				}
+				op.respond(builder);
 			} catch (IOException e) {
 				LOG.debug("IOException 226");
 				/* pass */
 			}
+			builder.queue(support.getQueue());
 		}
 	}
 

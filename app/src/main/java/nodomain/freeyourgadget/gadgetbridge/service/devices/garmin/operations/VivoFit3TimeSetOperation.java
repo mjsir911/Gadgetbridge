@@ -111,7 +111,6 @@ public class VivoFit3TimeSetOperation extends VivoFit3Operation {
 	}
 
 	public void readExternal(ObjectInput in) throws IOException {
-		super.readExternal(in);
 		/* doesn't do much */
 	}
 }

@@ -50,9 +50,10 @@ public class VivoFit3WhatOneOperation extends VivoFit3Operation {
 	}
 
 	@Override
-	protected void doRecieve() throws IOException {
-		LOG.debug("whatOneRecieve");
-		new VivoFit3AckOperation(getSupport(), this, new VivoFit3BytesOperation(getSupport(), messageType, data)).perform();
+	public void respond(TransactionBuilder builder) throws IOException {
+		LOG.debug("respond()");
+		new VivoFit3AckOperation(getSupport(), this, new VivoFit3BytesOperation(getSupport(), messageType, data))
+			.perform(builder);
 	}
 
 	public void writeExternal(ObjectOutput out) throws IOException {
@@ -60,7 +61,6 @@ public class VivoFit3WhatOneOperation extends VivoFit3Operation {
 	}
 
 	public void readExternal(ObjectInput in) throws IOException {
-		super.readExternal(in);
 		/* nothing... for now */
 	}
 }

@@ -58,7 +58,8 @@ public class VivoFit3AckOperation extends VivoFit3Operation {
 		this(support, replyTo, null);
 	}
 
-	protected void doRecieve() throws IOException {
+	@Override
+	public void respond(TransactionBuilder builder) {
 		/* nothing */
 	}
 
@@ -72,7 +73,6 @@ public class VivoFit3AckOperation extends VivoFit3Operation {
 	}
 
 	public void readExternal(ObjectInput in) throws IOException {
-		super.readExternal(in);
 		status = in.readByte();
 		try {
 			reply = (VivoFit3Operation) in.readObject();

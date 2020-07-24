@@ -45,28 +45,23 @@ abstract public class VivoFit3Operation extends AbstractBTLEOperation<VivoFit3Su
 	public VivoFit3Operation(VivoFit3Support support) {
 		super(support);
 	}
-	private boolean recieving = false;
-	protected void setRecieving() {
-		recieving = true;
-	}
 	public short getMessageType() {
 		return messageType;
 	}
 	protected void doPerform() throws IOException {
 		LOG.debug("VivoFit3Operation.doPerform()");
+		TransactionBuilder builder = createTransactionBuilder("TX");
 		try {
-			if (recieving) {
-				doRecieve();
-			} else {
-				doSend();
-			}
+			perform(builder);
+			builder.queue(getQueue());
 		} finally {
 			operationFinished();
 		}
 	}
-	protected void doSend() throws IOException {
+
+	public void perform(TransactionBuilder builder) throws IOException {
 		LOG.debug("Sending: " + String.valueOf(this));
-		try (OutputStream out = getSupport().getUploadStream()) {
+		try (OutputStream out = getSupport().getUploadStream(builder)) {
 			ByteBufferObjectOutputStream bos = new ByteBufferObjectOutputStream(out);
 			bos.buffer.order(ByteOrder.LITTLE_ENDIAN);
 			writeHeader(bos);
@@ -74,18 +69,13 @@ abstract public class VivoFit3Operation extends AbstractBTLEOperation<VivoFit3Su
 			writeExternal(bos);
 		}
 	}
-	protected void doRecieve() throws IOException {
-		new VivoFit3AckOperation(getSupport(), this).perform();
+	public void respond(TransactionBuilder builder) throws IOException {
+		new VivoFit3AckOperation(getSupport(), this).perform(builder);
 	}
 
 	public void writeHeader(ObjectOutput out) throws IOException {
 		LOG.debug("sending header");
 		out.writeShort(getMessageType());
-	}
-
-	public void readExternal(ObjectInput in) throws IOException {
-		setRecieving();
-		LOG.debug("__MARCO__ readExternal");
 	}
 
 	static public VivoFit3Operation dispatch(VivoFit3Support support, ObjectInput in) throws IOException {

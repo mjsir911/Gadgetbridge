@@ -53,7 +53,6 @@ public class VivoFit3BytesOperation extends VivoFit3Operation {
 	}
 
 	public void readExternal(ObjectInput in) throws IOException {
-		super.readExternal(in);
 		/* whatever */
 	}
 }

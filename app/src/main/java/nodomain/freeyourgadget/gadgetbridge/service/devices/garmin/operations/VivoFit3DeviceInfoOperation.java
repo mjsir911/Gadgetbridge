@@ -75,18 +75,16 @@ public class VivoFit3DeviceInfoOperation extends VivoFit3Operation {
 	}
 
 	@Override
-	protected void doRecieve() throws IOException {
+	public void respond(TransactionBuilder builder) throws IOException {
 		LOG.debug("doing receive perform!");
 		GBDevice dev = getDevice();
 		dev.setName(name);
 		dev.setFirmwareVersion(String.valueOf(software_version));
 		dev.setFirmwareVersion2("N/A");
 		dev.setModel(!model.isEmpty() ? model : String.valueOf(product_num));
-		TransactionBuilder builder = getSupport().createTransactionBuilder("DeviceInfoInitialize");
-		builder.add(new SetDeviceStateAction(getDevice(), GBDevice.State.INITIALIZED, getContext()));
-		getSupport().performImmediately(builder);
 
-		new VivoFit3AckOperation(getSupport(), this, getDefault(getSupport())).perform();
+		new VivoFit3AckOperation(getSupport(), this, getDefault(getSupport())).perform(builder);
+		builder.add(new SetDeviceStateAction(getDevice(), GBDevice.State.INITIALIZED, getContext()));
 	}
 
 	public void writeExternal(ObjectOutput out) throws IOException {
@@ -102,7 +100,6 @@ public class VivoFit3DeviceInfoOperation extends VivoFit3Operation {
 	}
 
 	public void readExternal(ObjectInput in) throws IOException {
-		super.readExternal(in);
 		proto_version = in.readUnsignedShort();
 		LOG.debug("proto_version: " + String.valueOf(proto_version));
 		product_num = in.readUnsignedShort();
