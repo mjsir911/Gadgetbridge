@@ -114,11 +114,11 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 			// LOG.debug("upload writing : 0x" + Integer.toHexString(b & 0xFF));
 			deque.add((byte) b);
 			if (deque.size() == 20) {
-				send();
+				flush();
 			}
 		}
-		// TODO: this should really be flush
-		private void send() throws IOException {
+		public void flush() throws IOException {
+			LOG.debug("flush()ing from Uploader!");
 			int size = deque.size();
 			byte[] b = new byte[size];
 			for (int i = 0; i < size; i++) {
@@ -127,7 +127,7 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 			builder.write(write, b);
 		}
 		public void close() throws IOException {
-			send();
+			flush();
 		}
 	}
 	public OutputStream getUploadStream(TransactionBuilder builder) {
