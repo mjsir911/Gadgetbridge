@@ -11,9 +11,17 @@ import java.nio.charset.StandardCharsets;
 
 public class ByteBufferObjectOutputStream extends FilterOutputStream implements ObjectOutput {  
 	final public ByteBuffer buffer;
-	public ByteBufferObjectOutputStream(OutputStream out) {
+	public ByteBufferObjectOutputStream(OutputStream out, ByteBuffer buffer) {
 		super(out);
-		buffer = ByteBuffer.allocate(8);
+		this.buffer = buffer;
+	}
+
+	public ByteBufferObjectOutputStream(OutputStream out) {
+		this(out, makeBuffer());
+	}
+
+	public static ByteBuffer makeBuffer() {
+		return ByteBuffer.allocate(8);
 	}
 
 	private void writeBytesFromBuffer(int n) throws IOException {
