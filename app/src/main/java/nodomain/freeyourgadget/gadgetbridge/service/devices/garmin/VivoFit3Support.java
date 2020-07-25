@@ -76,7 +76,7 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 	public boolean connectFirstTime() {
 		TransactionBuilder builder = createTransactionBuilder("Setting up device");
 		setState(builder, GBDevice.State.INITIALIZING);
-		setState(builder, GBDevice.State.INITIALIZED);
+		// setState(builder, GBDevice.State.INITIALIZED);
 		try {
 			performConnected(builder.getTransaction());
 		} catch (IOException e) {
@@ -95,6 +95,7 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		builder.notify(readCharacteristic, true);
 		builder.setGattCallback(this);
 
+		// onSetTime(); // this crashes things
 
 		return builder;
 	}
@@ -236,10 +237,6 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 
 	private TransactionBuilder setState(TransactionBuilder builder, GBDevice.State state) {
 		return builder.add(new SetDeviceStateAction(getDevice(), state, getContext()));
-	}
-
-	private void setInitialized(TransactionBuilder builder) {
-		setState(builder, GBDevice.State.INITIALIZED);
 	}
 
 	@Override
