@@ -172,11 +172,11 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 					LOG.error("ClassNotFoundException 187");
 				}
 				op.respond(builder);
+				support.performImmediately(builder);
 			} catch (IOException e) {
 				LOG.debug("IOException 226");
 				/* pass */
 			}
-			builder.queue(support.getQueue());
 		}
 	}
 
