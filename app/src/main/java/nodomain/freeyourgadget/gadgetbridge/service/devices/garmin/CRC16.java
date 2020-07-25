@@ -1,4 +1,4 @@
-/*  Copyright (C) 2020 Marco Sirabella
+/*  Copyright (C) 2020 Marco Sirabella, mormegil
 
     This file is part of Gadgetbridge.
 
