@@ -31,6 +31,7 @@ import java.io.PipedOutputStream;
 import java.io.InputStream;
 import java.io.DataInputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.FilterOutputStream;
