@@ -61,12 +61,10 @@ abstract public class VivoFit3Operation extends AbstractBTLEOperation<VivoFit3Su
 
 	public void perform(TransactionBuilder builder) throws IOException {
 		LOG.debug("Sending: " + String.valueOf(this));
-		try (OutputStream out = getSupport().getUploadStream(builder)) {
-			ByteBufferObjectOutputStream bos = new ByteBufferObjectOutputStream(out);
-			bos.buffer.order(ByteOrder.LITTLE_ENDIAN);
-			writeHeader(bos);
+		try (ObjectOutput out = getSupport().getUploadStream(builder)) {
+			writeHeader(out);
 			LOG.debug("sending the rest");
-			writeExternal(bos);
+			writeExternal(out);
 		}
 	}
 	public void respond(TransactionBuilder builder) throws IOException {

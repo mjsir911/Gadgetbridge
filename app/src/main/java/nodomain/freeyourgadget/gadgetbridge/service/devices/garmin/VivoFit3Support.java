@@ -130,8 +130,21 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 			flush();
 		}
 	}
-	public OutputStream getUploadStream(TransactionBuilder builder) {
-		return new LengthPrefixer(new CRCAdder(new COBSEncoder(new Uploader(builder, this.writeCharacteristic)), new CRC16.IBM()));
+	public ObjectOutput getUploadStream(TransactionBuilder builder) {
+		ByteBuffer buf = ByteBufferObjectOutputStream.makeBuffer();
+		buf.order(ByteOrder.LITTLE_ENDIAN);
+
+		// read from middle out
+		return 
+			new ByteBufferObjectOutputStream(
+				new LengthPrefixer(
+					new CRCAdder(
+						new COBSEncoder(
+							new Uploader(builder, this.writeCharacteristic)
+						),
+					new CRC16.IBM())
+				), 
+			buf);
 	}
 
 	private static class Dispatcher implements Runnable {
