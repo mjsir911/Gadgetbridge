@@ -139,9 +139,11 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 			new ByteBufferObjectOutputStream(
 				new LengthPrefixer(
 					new CRCAdder(
-						new COBSEncoder(
-							new Uploader(builder, this.writeCharacteristic)
-						),
+						new ByteBufferObjectOutputStream(
+							new COBSEncoder(
+								new Uploader(builder, this.writeCharacteristic)
+							),
+						buf),
 					new CRC16.IBM())
 				), 
 			buf);
