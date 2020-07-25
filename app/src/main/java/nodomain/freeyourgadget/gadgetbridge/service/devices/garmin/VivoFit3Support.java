@@ -29,8 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.io.InputStream;
-import java.io.DataInputStream;
-import java.io.ObjectInputStream;
+import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -96,8 +95,6 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		builder.notify(readCharacteristic, true);
 		builder.setGattCallback(this);
 
-		cycleInputStream();
-
 
 		return builder;
 	}
@@ -150,17 +147,40 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 			buf);
 	}
 
+	public ObjectInput getDownloadStream(InputStream in) {
+		ByteBuffer buf = ByteBufferObjectOutputStream.makeBuffer();
+		buf.order(ByteOrder.LITTLE_ENDIAN);
+
+		return 
+			new ByteBufferObjectInputStream(
+				new CRCChecker(
+					new COBSDecoder(in),
+				new CRC16.IBM()),
+			buf);
+	}
+
 	private static class Dispatcher implements Runnable {
 		final private VivoFit3Support support;
-		final InputStream in;
-		public Dispatcher(VivoFit3Support support, InputStream in) {
+		final private ObjectInput in;
+		final public OutputStream out;
+		public Dispatcher(VivoFit3Support support) {
 			this.support = support;
-			this.in = in;
+
+			final PipedInputStream pin = new PipedInputStream();
+			final PipedOutputStream pout = new PipedOutputStream();
+				try {
+					pout.connect(pin);
+				} catch (IOException e) {
+					LOG.error("really shouldn't happen");
+				}
+
+			this.out = pout;
+			this.in = support.getDownloadStream(pin);
 		}
 		public void run() {
 			TransactionBuilder builder = support.createTransactionBuilder("Reply");
-			try(ByteBufferObjectInputStream in = new ByteBufferObjectInputStream(this.in)) {
-				in.buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+			try(ObjectInput in = this.in) {
 				VivoFit3Operation op = VivoFit3Operation.dispatch(support, in);
 				if (op == null) {
 					LOG.error("dispatch returned none");
@@ -180,42 +200,37 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		}
 	}
 
-	private OutputStream queue_stream;
-	private void cycleInputStream() {
-		LOG.debug("MARCO doing input stream");
-		final PipedInputStream in = new PipedInputStream();
-		final PipedOutputStream out = new PipedOutputStream();
-		try {
-			out.connect(in);
-		} catch (IOException e) {
-			LOG.error("really shouldn't happen");
+	private Thread dispatchThread;
+	private Dispatcher dispatcher;
+
+	private Dispatcher getDispatcher(boolean createNew) {
+		if (createNew) {
+			if (dispatchThread != null && dispatchThread.isAlive()) {
+				LOG.error("previous dispatch not done, waiting for something?");
+				dispatchThread.interrupt(); // eh
+			}
+			dispatcher = new Dispatcher(this);
+			dispatchThread = new Thread(dispatcher);
+			dispatchThread.start();
+		} else if (dispatcher == null) {
+			LOG.error("Requesting null dispatcher!");
 		}
-		queue_stream = out;
-		// final GattDownloadStream in = new GattDownloadStream();
-		Dispatcher op = new Dispatcher(this, new CRCChecker(new COBSDecoder(in), new CRC16.IBM()));
-		new Thread(op).start();
+		return dispatcher;
 	}
 
 	public boolean onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
 		byte[] value = characteristic.getValue();
-		LOG.debug("MARCO@@@@@@@@@@ characteristicchanged 1");
+		Dispatcher dispatch;
+		if (value[0] == 0) {
+			// start of a new frame
+			dispatch = getDispatcher(true);
+		} else {
+			dispatch = getDispatcher(false);
+		}
+
 		try {
-			queue_stream.write(value);
-		} catch (IOException e) {
-			return false;
-		}
-		LOG.debug("MARCO@@@@@@@@@@ characteristicchanged 2");
-		if (value[value.length - 1] == 0x00) {
-			try {
-				queue_stream.close();
-			} catch (IOException e) {
-				// this isn't really a problem
-				LOG.error("couldn't close queue stream");
-			}
-			LOG.debug("END OF STREAM, cycling");
-			cycleInputStream();
-			// end of the line
-		}
+			dispatch.out.write(value);
+		} catch (IOException e) {}
 		return true;
 	}
 
