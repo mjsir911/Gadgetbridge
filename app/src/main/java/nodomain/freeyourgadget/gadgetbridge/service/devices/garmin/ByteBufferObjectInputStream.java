@@ -13,9 +13,16 @@ import java.io.IOException;
 
 class ByteBufferObjectInputStream extends FilterInputStream implements ObjectInput {
 	final public ByteBuffer buffer;
-	ByteBufferObjectInputStream(InputStream in) {
+	ByteBufferObjectInputStream(InputStream in, ByteBuffer buffer) {
 		super(in);
-		buffer = ByteBuffer.allocate(8); // 64 bits
+		this.buffer = buffer;
+	}
+	ByteBufferObjectInputStream(InputStream in) {
+		this(in, makeBuffer());
+	}
+
+	public static ByteBuffer makeBuffer() {
+		return ByteBuffer.allocate(8); // 64 bits
 	}
 
 	private void readBytesToBuffer(int n) throws IOException {
