@@ -6,7 +6,6 @@ import java.io.IOException;
 
 public class COBSEncoder extends BufferedOutputStream {
 	private static int MAX_SIZE = 0xFF;
-	private int counter = 0;
 	public COBSEncoder(OutputStream out) {
 		super(out, MAX_SIZE);
 		try {
@@ -16,12 +15,10 @@ public class COBSEncoder extends BufferedOutputStream {
 		}
 	}
 	public void write(int b) throws IOException {
-		counter++;
 		if (b == 0) {
-			out.write(counter);
-			// TODO: don't use flush so sparingly
-			super.flush();
-			counter = 0;
+			out.write(this.count + 1);
+			out.write(this.buf, 0, this.count);
+			this.count = 0;
 			return;
 		}
 		super.write(b);
