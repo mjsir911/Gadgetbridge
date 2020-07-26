@@ -38,7 +38,7 @@ public class ByteBufferObjectOutputStream extends FilterOutputStream implements 
 		throw new UnsupportedOperationException("writeChars");
 	}
 	public void writeBytes(String s) throws IOException {
-		throw new UnsupportedOperationException("writeBytes");
+		write(s.getBytes());
 	}
 	public void writeDouble(double v) throws IOException {
 		buffer.putDouble(v);
