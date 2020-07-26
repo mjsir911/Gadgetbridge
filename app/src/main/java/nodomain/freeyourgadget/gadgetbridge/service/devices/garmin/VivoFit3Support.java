@@ -271,7 +271,7 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 	public void dispose() {
 		LOG.info("Dispose");
 		try {
-			new VivoFit3SystemEventOperation(this, new byte[] {0x01, 0x01, 0x00}).perform();
+			new VivoFit3SystemEventOperation(this, VivoFit3SystemEventOperation.Type.SYNC_COMPLETE).perform();
 		} catch (IOException e) {};
 		super.dispose();
 	}
