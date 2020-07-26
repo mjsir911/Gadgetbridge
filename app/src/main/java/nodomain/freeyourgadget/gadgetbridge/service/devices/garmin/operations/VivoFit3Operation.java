@@ -77,8 +77,6 @@ abstract public class VivoFit3Operation extends AbstractBTLEOperation<VivoFit3Su
 	}
 
 	static public VivoFit3Operation dispatch(VivoFit3Support support, ObjectInput in) throws IOException {
-		short len = in.readShort();
-		LOG.debug("found len:  " + String.valueOf(len));
 		short type = in.readShort();
 		LOG.debug("found type: 0x" + Integer.toHexString(type));
 		switch (type) {
