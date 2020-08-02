@@ -26,7 +26,9 @@ class ByteBufferObjectInputStream extends FilterInputStream implements ObjectInp
 	}
 
 	private void readBytesToBuffer(int n) throws IOException {
-		assert n <= 8;
+		if (n > buffer.capacity()) {
+			throw new AssertionError("Reading more bytes than available in buffer");
+		}
 		read(buffer.array(), 0, n);
 		buffer.rewind();
 	}

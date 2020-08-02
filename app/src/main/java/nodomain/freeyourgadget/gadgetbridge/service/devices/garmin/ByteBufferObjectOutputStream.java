@@ -25,7 +25,9 @@ public class ByteBufferObjectOutputStream extends FilterOutputStream implements 
 	}
 
 	private void writeBytesFromBuffer(int n) throws IOException {
-		assert n <= 8;
+		if (n > buffer.capacity()) {
+			throw new AssertionError("Writing more bytes than available in buffer");
+		}
 		write(buffer.array(), 0, n);
 		buffer.clear();
 	}
