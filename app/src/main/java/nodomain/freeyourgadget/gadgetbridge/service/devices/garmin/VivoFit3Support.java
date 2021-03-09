@@ -119,6 +119,9 @@ public class VivoFit3Support extends AbstractBTLEDeviceSupport {
 		public void flush() throws IOException {
 			LOG.debug("flush()ing from Uploader!");
 			int size = deque.size();
+			if (size == 0) {
+				return; // return early, no need to upload an empty message
+			}
 			byte[] b = new byte[size];
 			for (int i = 0; i < size; i++) {
 				b[i] = deque.remove();
