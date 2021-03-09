@@ -85,6 +85,7 @@ public class VivoFit3DeviceInfoOperation extends VivoFit3Operation {
 
 		new VivoFit3AckOperation(getSupport(), this, getDefault(getSupport())).perform(builder);
 		builder.add(new SetDeviceStateAction(getDevice(), GBDevice.State.INITIALIZED, getContext()));
+		new VivoFit3SetTimeOperation(getSupport()).perform(builder);
 	}
 
 	public void writeExternal(ObjectOutput out) throws IOException {
